@@ -1,0 +1,612 @@
+@{
+    ViewData["Title"] = "Student Information System";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="fw-bold mb-0" id="pageTitle">Students Directory</h3>
+            <span class="badge badge-saas-primary" id="pageBadge">Admissions & SIS</span>
+        </div>
+        <p class="text-secondary small mb-0 mt-1" id="pageSubtitle">Manage student profiles, enrollments, guardian linkages, and academic records.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-saas-outline" onclick="loadStudents(1)">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+        <button class="btn btn-saas-primary" onclick="openAdmitModal()" data-roles="OrganizationAdmin,Principal,SuperAdmin">
+            <i class="bi bi-person-plus-fill me-1"></i> Admit New Student
+        </button>
+    </div>
+</div>
+
+<!-- Search & Filtering Bar -->
+<div class="card p-3 mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-md-4 col-lg-3">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0 text-secondary">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control border-start-0" id="txtStudentSearch" placeholder="Search by name, roll, or admission #..." oninput="debounceStudentSearch()">
+            </div>
+        </div>
+        <div class="col-md-3 col-lg-2">
+            <select class="form-select" id="selGradeFilter" onchange="loadStudents(1)">
+                <option value="">All Grades</option>
+                <option value="Grade 1">Grade 1</option>
+                <option value="Grade 2">Grade 2</option>
+                <option value="Grade 3">Grade 3</option>
+                <option value="Grade 4">Grade 4</option>
+                <option value="Grade 5">Grade 5</option>
+                <option value="Grade 6">Grade 6</option>
+                <option value="Grade 7">Grade 7</option>
+                <option value="Grade 8">Grade 8</option>
+                <option value="Grade 9">Grade 9</option>
+                <option value="Grade 10">Grade 10</option>
+                <option value="Grade 11">Grade 11</option>
+                <option value="Grade 12">Grade 12</option>
+            </select>
+        </div>
+        <div class="col-md-2 col-lg-2">
+            <select class="form-select" id="selSectionFilter" onchange="loadStudents(1)">
+                <option value="">All Sections</option>
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+                <option value="C">Section C</option>
+                <option value="D">Section D</option>
+            </select>
+        </div>
+        <div class="col-md-3 col-lg-2">
+            <select class="form-select" id="selStatusFilter" onchange="loadStudents(1)">
+                <option value="">All Statuses</option>
+                <option value="1">Active</option>
+                <option value="2">Inactive</option>
+                <option value="3">Graduated</option>
+                <option value="4">Suspended</option>
+                <option value="5">Withdrawn</option>
+            </select>
+        </div>
+        <div class="col-md-12 col-lg-3 text-lg-end">
+            <span class="badge badge-saas-primary fs-6 px-3 py-2" id="badgeStudentCount">0 Students</span>
+        </div>
+    </div>
+</div>
+
+<!-- Students Data Table -->
+<div class="card overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0" id="tblStudents">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Admission #</th>
+                    <th>Student Name</th>
+                    <th>Grade / Class</th>
+                    <th>Section</th>
+                    <th>Primary Guardian</th>
+                    <th>Contact Phone</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="studentTableBody">
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="text-secondary small mt-2">Loading students directory...</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center py-3 px-4">
+        <div class="small text-secondary" id="pageSummary">
+            Showing 0 to 0 of 0 students
+        </div>
+        <div class="d-flex gap-2" id="paginationControls">
+            <button class="btn btn-sm btn-saas-outline" id="btnPrevPage" onclick="changeStudentPage(-1)" disabled>
+                <i class="bi bi-chevron-left me-1"></i> Previous
+            </button>
+            <span class="btn btn-sm btn-saas-primary disabled" id="lblCurrentPage">Page 1</span>
+            <button class="btn btn-sm btn-saas-outline" id="btnNextPage" onclick="changeStudentPage(1)" disabled>
+                Next <i class="bi bi-chevron-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Admit New Student Modal -->
+<div class="modal fade" id="modalAdmitStudent" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-person-plus-fill text-primary me-2"></i> Student Admission Form
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formAdmitStudent" onsubmit="handleAdmitStudent(event)">
+                <div class="modal-body p-4">
+                    <!-- Wizard Tabs -->
+                    <ul class="nav nav-pills mb-4 gap-2" id="pills-tab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-pill px-4" id="tab-student-info" data-bs-toggle="pill" data-bs-target="#pills-student" type="button" role="tab">
+                                <i class="bi bi-person me-1"></i> 1. Student Info
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill px-4" id="tab-guardian-info" data-bs-toggle="pill" data-bs-target="#pills-guardian" type="button" role="tab">
+                                <i class="bi bi-people me-1"></i> 2. Guardian & Contact
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill px-4" id="tab-emergency-info" data-bs-toggle="pill" data-bs-target="#pills-emergency" type="button" role="tab">
+                                <i class="bi bi-heart-pulse me-1"></i> 3. Medical & Notes
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="pills-tabContent">
+                        <!-- 1. Student Details -->
+                        <div class="tab-pane fade show active" id="pills-student" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label required">First Name</label>
+                                    <input type="text" class="form-control" id="stuFirstName" required placeholder="e.g. Zain">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label required">Last Name</label>
+                                    <input type="text" class="form-control" id="stuLastName" required placeholder="e.g. Ali">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Admission Number (Leave blank to auto-generate)</label>
+                                    <input type="text" class="form-control" id="stuAdmissionNo" placeholder="Auto-generated e.g. ADM-2026-0001">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label required">Grade / Class</label>
+                                    <select class="form-select" id="stuGrade" required>
+                                        <option value="">Select Grade...</option>
+                                        <option value="Grade 1">Grade 1</option>
+                                        <option value="Grade 2">Grade 2</option>
+                                        <option value="Grade 3">Grade 3</option>
+                                        <option value="Grade 4">Grade 4</option>
+                                        <option value="Grade 5">Grade 5</option>
+                                        <option value="Grade 6">Grade 6</option>
+                                        <option value="Grade 7">Grade 7</option>
+                                        <option value="Grade 8">Grade 8</option>
+                                        <option value="Grade 9">Grade 9</option>
+                                        <option value="Grade 10">Grade 10</option>
+                                        <option value="Grade 11">Grade 11</option>
+                                        <option value="Grade 12">Grade 12</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Section</label>
+                                    <input type="text" class="form-control" id="stuSection" placeholder="e.g. A, B, Green">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Roll Number</label>
+                                    <input type="text" class="form-control" id="stuRollNo" placeholder="e.g. 101">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label required">Gender</label>
+                                    <select class="form-select" id="stuGender" required>
+                                        <option value="1">Male</option>
+                                        <option value="2">Female</option>
+                                        <option value="3">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Date of Birth</label>
+                                    <input type="date" class="form-control" id="stuDOB">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Blood Group</label>
+                                    <select class="form-select" id="stuBloodGroup">
+                                        <option value="">Select Blood Group...</option>
+                                        <option value="A+">A+</option>
+                                        <option value="A-">A-</option>
+                                        <option value="B+">B+</option>
+                                        <option value="B-">B-</option>
+                                        <option value="AB+">AB+</option>
+                                        <option value="AB-">AB-</option>
+                                        <option value="O+">O+</option>
+                                        <option value="O-">O-</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">National ID / B-Form</label>
+                                    <input type="text" class="form-control" id="stuBForm" placeholder="e.g. 61101-1234567-1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Guardian Information -->
+                        <div class="tab-pane fade" id="pills-guardian" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label required">Guardian First Name</label>
+                                    <input type="text" class="form-control" id="guardFirst" placeholder="e.g. Muhammad">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required">Guardian Last Name</label>
+                                    <input type="text" class="form-control" id="guardLast" placeholder="e.g. Ali">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label required">Relationship</label>
+                                    <select class="form-select" id="guardRelation">
+                                        <option value="1">Father</option>
+                                        <option value="2">Mother</option>
+                                        <option value="3">Guardian</option>
+                                        <option value="4">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label required">Primary Mobile Number</label>
+                                    <input type="text" class="form-control" id="guardPhone" placeholder="e.g. +92 300 1234567">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="guardEmail" placeholder="guardian@email.com">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Residential Address</label>
+                                    <input type="text" class="form-control" id="guardAddress" placeholder="Street 14, Sector F-7/2, Islamabad">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Medical & Emergency -->
+                        <div class="tab-pane fade" id="pills-emergency" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Emergency Contact Person</label>
+                                    <input type="text" class="form-control" id="emContactName" placeholder="Full name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Emergency Contact Phone</label>
+                                    <input type="text" class="form-control" id="emContactPhone" placeholder="Phone number">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Known Allergies / Medical Notes</label>
+                                    <textarea class="form-control" id="stuMedicalNotes" rows="3" placeholder="Specify any medical conditions, asthma, allergies, or special requirements..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitAdmit">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="admitSpinner"></span>
+                        <i class="bi bi-check-circle me-1" id="admitIcon"></i> Complete Admission
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Student Profile Drawer / Modal -->
+<div class="modal fade" id="modalStudentDetails" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-person-badge text-primary me-2"></i> Student Profile Dossier
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="studentDetailsBody">
+                <!-- Dynamically loaded -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let admitModal = null;
+    let detailsModal = null;
+    let studentSearchTimeout = null;
+    let currentPage = 1;
+    let totalPages = 1;
+    const pageSize = 15;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!App.isAuthenticated()) {
+            window.location.href = "/login";
+            return;
+        }
+        adaptViewForRole();
+        admitModal = new bootstrap.Modal(document.getElementById("modalAdmitStudent"));
+        detailsModal = new bootstrap.Modal(document.getElementById("modalStudentDetails"));
+        loadStudents(1);
+    });
+
+    function adaptViewForRole() {
+        const titleEl = document.getElementById("pageTitle");
+        const badgeEl = document.getElementById("pageBadge");
+        const subtitleEl = document.getElementById("pageSubtitle");
+        if (!titleEl) return;
+
+        if (App.hasRole('Teacher')) {
+            titleEl.textContent = "My Classes & Enrolled Students";
+            if (badgeEl) badgeEl.textContent = "Academic Portal";
+            if (subtitleEl) subtitleEl.textContent = "Class student lists, roll numbers, and academic enrollment details.";
+        } else if (App.hasRole('Accountant')) {
+            titleEl.textContent = "Student Fee Records & Challans";
+            if (badgeEl) badgeEl.textContent = "Finance & Accounts";
+            if (subtitleEl) subtitleEl.textContent = "Verify student enrollment records and tuition fee linkage.";
+        } else if (App.hasRole('Student')) {
+            titleEl.textContent = "My Student Academic Record";
+            if (badgeEl) badgeEl.textContent = "Student Portal";
+            if (subtitleEl) subtitleEl.textContent = "Your official academic profile, enrollment number, and assigned grade.";
+        } else if (App.hasRole('Parent')) {
+            titleEl.textContent = "Children's Academic Record";
+            if (badgeEl) badgeEl.textContent = "Parent Portal";
+            if (subtitleEl) subtitleEl.textContent = "Enrolled profile details and active campus status for your children.";
+        }
+    }
+
+    function debounceStudentSearch() {
+        clearTimeout(studentSearchTimeout);
+        studentSearchTimeout = setTimeout(() => loadStudents(1), 300);
+    }
+
+    async function loadStudents(page) {
+        currentPage = page;
+        const tbody = document.getElementById("studentTableBody");
+        const search = document.getElementById("txtStudentSearch").value.trim();
+        const grade = document.getElementById("selGradeFilter").value;
+        const section = document.getElementById("selSectionFilter").value;
+        const status = document.getElementById("selStatusFilter").value;
+
+        let url = `/api/students?pageNumber=${currentPage}&pageSize=${pageSize}&`;
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (grade) url += `grade=${encodeURIComponent(grade)}&`;
+        if (section) url += `section=${encodeURIComponent(section)}&`;
+        if (status) url += `status=${encodeURIComponent(status)}&`;
+
+        const res = await apiFetch(url);
+        if (res.ok && res.data && res.data.success) {
+            const data = res.data.data;
+            totalPages = data.totalPages || 1;
+            document.getElementById("badgeStudentCount").textContent = `${data.totalCount} Students`;
+            renderStudentTable(data);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-1"></i> ${res.data?.message || 'Failed to load students'}</td></tr>`;
+        }
+    }
+
+    function renderStudentTable(data) {
+        const tbody = document.getElementById("studentTableBody");
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-secondary"><i class="bi bi-inbox fs-1 d-block mb-2"></i> No student records found.</td></tr>`;
+            updatePagination(0, 0, 0);
+            return;
+        }
+
+        const statusMap = {
+            1: { text: "Active", cls: "badge-saas-success" },
+            2: { text: "Inactive", cls: "bg-secondary text-white" },
+            3: { text: "Graduated", cls: "badge-saas-primary" },
+            4: { text: "Suspended", cls: "bg-warning text-dark" },
+            5: { text: "Withdrawn", cls: "bg-danger text-white" }
+        };
+
+        tbody.innerHTML = items.map(s => {
+            const st = statusMap[s.status] || { text: "Active", cls: "badge-saas-success" };
+            return `
+                <tr>
+                    <td class="ps-4">
+                        <span class="badge badge-saas-primary font-monospace">${s.admissionNumber}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                 style="width: 34px; height: 34px; background: var(--saas-primary); font-size: 0.85rem;">
+                                ${(s.fullName || 'S').substring(0, 1).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-body">${s.fullName}</div>
+                                <div class="small text-secondary">Roll: ${s.rollNumber || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="fw-semibold">${s.currentGrade}</span></td>
+                    <td><span class="badge bg-light text-dark border">${s.section || 'General'}</span></td>
+                    <td><div class="small fw-medium">${s.primaryGuardianName || '-'}</div></td>
+                    <td><div class="small text-secondary font-monospace"><i class="bi bi-telephone me-1"></i>${s.primaryGuardianPhone || '-'}</div></td>
+                    <td><span class="badge ${st.cls}">${st.text}</span></td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-saas-outline me-1" onclick="viewStudentDetails('${s.id}')" title="View Dossier">
+                            <i class="bi bi-eye text-primary"></i>
+                        </button>
+                        ${(App.hasPermission('Students.Delete') || App.hasRole('OrganizationAdmin', 'Principal', 'SuperAdmin')) ? `
+                        <button class="btn btn-sm btn-saas-outline text-danger" onclick="deleteStudent('${s.id}', '${s.fullName}')" title="Remove Student">
+                            <i class="bi bi-trash"></i>
+                        </button>` : ''}
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        updatePagination(data.pageNumber, data.pageSize, data.totalCount);
+    }
+
+    function updatePagination(page, size, total) {
+        const start = total === 0 ? 0 : (page - 1) * size + 1;
+        const end = Math.min(page * size, total);
+        document.getElementById("pageSummary").textContent = `Showing ${start} to ${end} of ${total} students`;
+        document.getElementById("lblCurrentPage").textContent = `Page ${page} of ${totalPages || 1}`;
+        document.getElementById("btnPrevPage").disabled = page <= 1;
+        document.getElementById("btnNextPage").disabled = page >= totalPages;
+    }
+
+    function changeStudentPage(delta) {
+        const newPage = currentPage + delta;
+        if (newPage >= 1 && newPage <= totalPages) {
+            loadStudents(newPage);
+        }
+    }
+
+    function openAdmitModal() {
+        document.getElementById("formAdmitStudent").reset();
+        admitModal.show();
+    }
+
+    async function handleAdmitStudent(e) {
+        e.preventDefault();
+        const btn = document.getElementById("btnSubmitAdmit");
+        const spin = document.getElementById("admitSpinner");
+        const icon = document.getElementById("admitIcon");
+
+        btn.disabled = true;
+        spin.classList.remove("d-none");
+        icon.classList.add("d-none");
+
+        const guardFirst = document.getElementById("guardFirst").value.trim();
+        const guardPhone = document.getElementById("guardPhone").value.trim();
+
+        const body = {
+            firstName: document.getElementById("stuFirstName").value.trim(),
+            lastName: document.getElementById("stuLastName").value.trim(),
+            admissionNumber: document.getElementById("stuAdmissionNo").value.trim() || null,
+            currentGrade: document.getElementById("stuGrade").value,
+            section: document.getElementById("stuSection").value.trim() || null,
+            rollNumber: document.getElementById("stuRollNo").value.trim() || null,
+            gender: parseInt(document.getElementById("stuGender").value),
+            dateOfBirth: document.getElementById("stuDOB").value || null,
+            bloodGroup: document.getElementById("stuBloodGroup").value || null,
+            nationalIdOrBForm: document.getElementById("stuBForm").value.trim() || null,
+            emergencyContactName: document.getElementById("emContactName").value.trim() || null,
+            emergencyContactPhone: document.getElementById("emContactPhone").value.trim() || null,
+            medicalNotes: document.getElementById("stuMedicalNotes").value.trim() || null,
+            initialGuardian: guardFirst && guardPhone ? {
+                firstName: guardFirst,
+                lastName: document.getElementById("guardLast").value.trim(),
+                relationshipType: parseInt(document.getElementById("guardRelation").value),
+                phone: guardPhone,
+                email: document.getElementById("guardEmail").value.trim() || null,
+                address: document.getElementById("guardAddress").value.trim() || null,
+                isEmergencyContact: true
+            } : null,
+            isPrimaryGuardian: true
+        };
+
+        const res = await apiFetch("/api/students", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        btn.disabled = false;
+        spin.classList.add("d-none");
+        icon.classList.remove("d-none");
+
+        if (res.ok && res.data && res.data.success) {
+            showToast("Student admitted successfully!", "success");
+            admitModal.hide();
+            loadStudents(1);
+        } else {
+            showToast("Admission failed: " + (res.data?.message || "Check fields"), "danger");
+        }
+    }
+
+    async function viewStudentDetails(id) {
+        const bodyEl = document.getElementById("studentDetailsBody");
+        bodyEl.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>`;
+        detailsModal.show();
+
+        const res = await apiFetch(`/api/students/${id}`);
+        if (res.ok && res.data && res.data.success) {
+            const s = res.data.data;
+            bodyEl.innerHTML = `
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4" style="background: rgba(146, 78, 192, 0.06); border-left: 4px solid var(--saas-primary);">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                         style="width: 54px; height: 54px; background: var(--saas-primary); font-size: 1.5rem;">
+                        ${(s.fullName || 'S').substring(0, 1).toUpperCase()}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">${s.fullName}</h4>
+                        <div class="small text-secondary">
+                            <span class="badge badge-saas-primary me-2">${s.admissionNumber}</span>
+                            Grade: <strong>${s.currentGrade}</strong> &bull; Section: <strong>${s.section || 'General'}</strong> &bull; Roll: <strong>${s.rollNumber || 'N/A'}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="small text-secondary">Gender</div>
+                        <div class="fw-semibold">${s.gender === 1 ? 'Male' : s.gender === 2 ? 'Female' : 'Other'}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="small text-secondary">Blood Group</div>
+                        <div class="fw-semibold">${s.bloodGroup || 'Not specified'}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="small text-secondary">B-Form / CNIC</div>
+                        <div class="fw-semibold font-monospace">${s.nationalIdOrBForm || 'N/A'}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Emergency Contact</div>
+                        <div class="fw-semibold">${s.emergencyContactName || 'N/A'} (${s.emergencyContactPhone || 'N/A'})</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Medical Information</div>
+                        <div class="fw-semibold text-danger">${s.medicalNotes || 'No known allergies or chronic conditions reported.'}</div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i> Linked Guardians</h6>
+                ${s.guardians && s.guardians.length > 0 ? s.guardians.map(g => `
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-2 border mb-2">
+                        <div>
+                            <div class="fw-bold">${g.guardianName} <span class="badge badge-saas-primary small">${g.relationship}</span></div>
+                            <div class="small text-secondary"><i class="bi bi-telephone me-1"></i> ${g.phone} &bull; <i class="bi bi-envelope me-1 ms-2"></i> ${g.email || 'No email'}</div>
+                        </div>
+                        <div>
+                            ${g.isPrimaryContact ? '<span class="badge badge-saas-success">Primary</span>' : ''}
+                        </div>
+                    </div>
+                `).join('') : '<div class="text-secondary small">No guardians linked to this student record.</div>'}
+            `;
+        } else {
+            bodyEl.innerHTML = `<div class="text-danger py-4 text-center">Failed to load student details.</div>`;
+        }
+    }
+
+    async function deleteStudent(id, name) {
+        const result = await Swal.fire({
+            title: "Delete Student Record?",
+            text: `Are you sure you want to remove "${name}"? This action will soft-delete the student file.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Yes, delete record"
+        });
+
+        if (result.isConfirmed) {
+            const res = await apiFetch(`/api/students/${id}`, { method: "DELETE" });
+            if (res.ok && res.data && res.data.success) {
+                showToast(`Student "${name}" deleted successfully!`, "success");
+                loadStudents(currentPage);
+            } else {
+                showToast("Failed to delete: " + (res.data?.message || "Error"), "danger");
+            }
+        }
+    }
+</script>
+}

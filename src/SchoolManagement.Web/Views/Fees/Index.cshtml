@@ -1,0 +1,1126 @@
+@{
+    ViewData["Title"] = "Fees & Finance Management";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="fw-bold mb-0" id="pageTitle">Fees &amp; Financial Management</h3>
+            <span class="badge badge-saas-primary" id="pageBadge">Accounts &amp; Challans</span>
+        </div>
+        <p class="text-secondary small mb-0 mt-1" id="pageSubtitle">Track tuition billing, collect partial &amp; full fees, monitor defaulters, and print official fee receipts.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-saas-outline" onclick="loadFeeSummary(); loadInvoices(1);">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+        <button class="btn btn-saas-outline" onclick="exportInvoicesCsv()">
+            <i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i> Export CSV
+        </button>
+        <button class="btn btn-saas-primary" onclick="openBulkInvoiceModal()" data-roles="SuperAdmin,OrganizationAdmin,Principal,Accountant">
+            <i class="bi bi-plus-circle me-1"></i> Generate Bulk Invoices
+        </button>
+    </div>
+</div>
+
+<!-- Financial KPI Dashboard Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Total Billed</span>
+                    <h4 class="fw-bold my-1 text-body" id="kpiTotalBilled">Rs. 0</h4>
+                    <span class="small text-muted" id="kpiInvoiceCount">0 Invoices</span>
+                </div>
+                <div class="rounded-circle p-2 bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-cash-stack fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Collected Amount</span>
+                    <h4 class="fw-bold my-1 text-success" id="kpiTotalCollected">Rs. 0</h4>
+                    <span class="small text-success" id="kpiPaidCount"><i class="bi bi-check-circle me-1"></i>0 Paid</span>
+                </div>
+                <div class="rounded-circle p-2 bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-wallet2 fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-danger">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Outstanding Dues</span>
+                    <h4 class="fw-bold my-1 text-danger" id="kpiTotalOutstanding">Rs. 0</h4>
+                    <span class="small text-danger" id="kpiOverdueCount"><i class="bi bi-exclamation-circle me-1"></i>0 Overdue</span>
+                </div>
+                <div class="rounded-circle p-2 bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-clock-history fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Collection Rate</span>
+                    <h4 class="fw-bold my-1 text-info" id="kpiCollectionRate">0%</h4>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-info" role="progressbar" id="kpiRateBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="rounded-circle p-2 bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-percent fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Tabs -->
+<ul class="nav nav-pills mb-4 gap-2" id="feeTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active rounded-pill px-4" id="tab-invoices" data-bs-toggle="pill" data-bs-target="#pane-invoices" type="button" role="tab">
+            <i class="bi bi-receipt me-1"></i> Invoices Directory
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4" id="tab-defaulters" data-bs-toggle="pill" data-bs-target="#pane-defaulters" type="button" role="tab" onclick="loadDefaulters(1)">
+            <i class="bi bi-person-x-fill me-1"></i> Fee Defaulters Tracker
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="feeTabsContent">
+    <!-- PANE 1: INVOICES DIRECTORY -->
+    <div class="tab-pane fade show active" id="pane-invoices" role="tabpanel">
+        <!-- Search & Filter Controls -->
+        <div class="card p-3 mb-4 shadow-sm">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="txtFeeSearch" placeholder="Search invoice #, student..." oninput="debounceFeeSearch()">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="selFeeGrade" onchange="loadInvoices(1)">
+                        <option value="">All Grades</option>
+                        <option value="Grade 1">Grade 1</option>
+                        <option value="Grade 2">Grade 2</option>
+                        <option value="Grade 3">Grade 3</option>
+                        <option value="Grade 4">Grade 4</option>
+                        <option value="Grade 5">Grade 5</option>
+                        <option value="Grade 6">Grade 6</option>
+                        <option value="Grade 7">Grade 7</option>
+                        <option value="Grade 8">Grade 8</option>
+                        <option value="Grade 9">Grade 9</option>
+                        <option value="Grade 10">Grade 10</option>
+                        <option value="Grade 11">Grade 11</option>
+                        <option value="Grade 12">Grade 12</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="selFeeStatus" onchange="loadInvoices(1)">
+                        <option value="">All Statuses</option>
+                        <option value="1">Unpaid</option>
+                        <option value="2">Partially Paid</option>
+                        <option value="3">Paid</option>
+                        <option value="4">Overdue</option>
+                        <option value="5">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" id="dtFeeFrom" title="From Date" onchange="loadInvoices(1)">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" id="dtFeeTo" title="To Date" onchange="loadInvoices(1)">
+                </div>
+                <div class="col-md-1 text-end">
+                    <button class="btn btn-outline-secondary w-100" onclick="resetFeeFilters()" title="Reset Filters">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoices Data Table -->
+        <div class="card overflow-hidden shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="tblInvoices">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Invoice #</th>
+                            <th>Student</th>
+                            <th>Title / Month</th>
+                            <th>Class</th>
+                            <th>Total (PKR)</th>
+                            <th>Paid (PKR)</th>
+                            <th>Balance</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoiceTableBody">
+                        <tr>
+                            <td colspan="10" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <div class="text-secondary small mt-2">Loading invoice records...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center py-3 px-4">
+                <div class="small text-secondary" id="invoicePageSummary">Showing 0 to 0 of 0 invoices</div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-saas-outline" id="btnPrevInvPage" onclick="changeInvoicePage(-1)" disabled>
+                        <i class="bi bi-chevron-left me-1"></i> Previous
+                    </button>
+                    <span class="btn btn-sm btn-saas-primary disabled" id="lblCurrentInvPage">Page 1</span>
+                    <button class="btn btn-sm btn-saas-outline" id="btnNextInvPage" onclick="changeInvoicePage(1)" disabled>
+                        Next <i class="bi bi-chevron-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANE 2: FEE DEFAULTERS TRACKER -->
+    <div class="tab-pane fade" id="pane-defaulters" role="tabpanel">
+        <div class="card p-3 mb-4 shadow-sm">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <select class="form-select" id="selDefaulterGrade" onchange="loadDefaulters(1)">
+                        <option value="">All Grades</option>
+                        <option value="Grade 1">Grade 1</option>
+                        <option value="Grade 2">Grade 2</option>
+                        <option value="Grade 3">Grade 3</option>
+                        <option value="Grade 4">Grade 4</option>
+                        <option value="Grade 5">Grade 5</option>
+                        <option value="Grade 6">Grade 6</option>
+                        <option value="Grade 7">Grade 7</option>
+                        <option value="Grade 8">Grade 8</option>
+                        <option value="Grade 9">Grade 9</option>
+                        <option value="Grade 10">Grade 10</option>
+                        <option value="Grade 11">Grade 11</option>
+                        <option value="Grade 12">Grade 12</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text small">Min Days Overdue</span>
+                        <input type="number" class="form-control" id="numDefaulterDays" value="1" min="1" onchange="loadDefaulters(1)">
+                    </div>
+                </div>
+                <div class="col-md-5 text-end">
+                    <span class="badge bg-danger fs-6 px-3 py-2" id="badgeDefaultersCount">0 Defaulters</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="tblDefaulters">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Student</th>
+                            <th>Class &amp; Section</th>
+                            <th>Primary Guardian</th>
+                            <th>Phone Contact</th>
+                            <th>Amount Due</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th class="text-end pe-4">Quick Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="defaultersTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-secondary">
+                                <i class="bi bi-clock-history fs-2 d-block mb-2"></i>
+                                Select filters or switch tab to load defaulters.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center py-3 px-4">
+                <div class="small text-secondary" id="defaulterPageSummary">Showing 0 defaulters</div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-saas-outline" id="btnPrevDefPage" onclick="changeDefaulterPage(-1)" disabled>
+                        <i class="bi bi-chevron-left me-1"></i> Previous
+                    </button>
+                    <span class="btn btn-sm btn-saas-primary disabled" id="lblCurrentDefPage">Page 1</span>
+                    <button class="btn btn-sm btn-saas-outline" id="btnNextDefPage" onclick="changeDefaulterPage(1)" disabled>
+                        Next <i class="bi bi-chevron-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: GENERATE BULK INVOICES -->
+<div class="modal fade" id="modalBulkInvoice" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-layers-fill text-primary me-2"></i> Generate Bulk Fee Challans
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formBulkInvoice" onsubmit="handleBulkInvoice(event)">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Challan / Invoice Title</label>
+                            <input type="text" class="form-control" id="bulkTitle" required placeholder="e.g. Tuition Fee — October 2026">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Base Tuition Fee Amount (PKR)</label>
+                            <input type="number" class="form-control" id="bulkAmount" required min="1" step="0.01" placeholder="e.g. 8500">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Target Grade / Class (Leave empty for all grades)</label>
+                            <select class="form-select" id="bulkGrade">
+                                <option value="">All Enrolled Classes</option>
+                                <option value="Grade 1">Grade 1</option>
+                                <option value="Grade 2">Grade 2</option>
+                                <option value="Grade 3">Grade 3</option>
+                                <option value="Grade 4">Grade 4</option>
+                                <option value="Grade 5">Grade 5</option>
+                                <option value="Grade 6">Grade 6</option>
+                                <option value="Grade 7">Grade 7</option>
+                                <option value="Grade 8">Grade 8</option>
+                                <option value="Grade 9">Grade 9</option>
+                                <option value="Grade 10">Grade 10</option>
+                                <option value="Grade 11">Grade 11</option>
+                                <option value="Grade 12">Grade 12</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Section (Optional)</label>
+                            <input type="text" class="form-control" id="bulkSection" placeholder="e.g. A, B, Green">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Issue Date</label>
+                            <input type="date" class="form-control" id="bulkIssueDate" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Due Date</label>
+                            <input type="date" class="form-control" id="bulkDueDate" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Discount / Concession (%)</label>
+                            <input type="number" class="form-control" id="bulkDiscount" min="0" max="100" value="0">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Fee Breakdown / Remarks</label>
+                            <textarea class="form-control" id="bulkRemarks" rows="2" placeholder="Tuition Fee + Computer Lab charges..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitBulk">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="bulkSpinner"></span>
+                        <i class="bi bi-check2-all me-1"></i> Generate Invoices
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: INVOICE DETAIL & PAYMENT TIMELINE -->
+<div class="modal fade" id="modalInvoiceDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-file-earmark-text text-primary me-2"></i> Fee Challan &amp; History
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="invoiceDetailBody">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-saas-outline text-danger" id="btnOpenRefund" onclick="openRefundModal()">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Refund
+                    </button>
+                    <button type="button" class="btn btn-saas-outline" onclick="printChallanReceipt()">
+                        <i class="bi bi-printer me-1"></i> Print Challan
+                    </button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-success" id="btnOpenPayOnline" onclick="openPayOnlineModal()">
+                        <i class="bi bi-credit-card-2-front me-1"></i> Pay Online
+                    </button>
+                    <button type="button" class="btn btn-saas-primary" id="btnOpenRecordPayment" onclick="openRecordPaymentModal()">
+                        <i class="bi bi-credit-card me-1"></i> Record Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: RECORD PAYMENT -->
+<div class="modal fade" id="modalRecordPayment" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-cash-coin text-success me-2"></i> Record Fee Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formRecordPayment" onsubmit="handleRecordPayment(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label required">Amount to Pay (PKR)</label>
+                        <input type="number" class="form-control fs-5 fw-bold" id="payAmount" required min="1" step="0.01">
+                        <small class="text-secondary" id="lblRemainingBalance">Remaining Balance: PKR 0</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Payment Method</label>
+                        <select class="form-select" id="payMethod" required>
+                            <option value="1">Cash</option>
+                            <option value="2">Bank Transfer</option>
+                            <option value="3">Cheque / Pay Order</option>
+                            <option value="4">Online Transfer (JazzCash / EasyPaisa / 1Link)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Transaction Reference / Slip #</label>
+                        <input type="text" class="form-control" id="payReference" placeholder="e.g. HBL-DEP-994827">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Payment Date</label>
+                        <input type="date" class="form-control" id="payDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Notes / Remarks</label>
+                        <textarea class="form-control" id="payNotes" rows="2" placeholder="Received by cash counter..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitPayment">
+                        <i class="bi bi-check-circle me-1"></i> Confirm &amp; Issue Receipt
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PROCESS REFUND -->
+<div class="modal fade" id="modalRefund" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i> Process Fee Refund
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formRefund" onsubmit="handleRefund(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label required">Refund Amount (PKR)</label>
+                        <input type="number" class="form-control fs-5 text-danger fw-bold" id="refundAmount" required min="1" step="0.01">
+                        <small class="text-secondary" id="lblMaxRefund">Max refundable: PKR 0</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Mandatory Reason for Refund</label>
+                        <textarea class="form-control" id="refundReason" required rows="3" placeholder="Duplicate deposit, concession adjustment, withdrawal..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="btnSubmitRefund">
+                        <i class="bi bi-check2 me-1"></i> Execute Refund
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PAY ONLINE (JAZZCASH / EASYPAISA / STRIPE) -->
+<div class="modal fade" id="modalPayOnline" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-success">
+                    <i class="bi bi-shield-check me-2"></i> Pay Online (Digital Gateway)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formPayOnline" onsubmit="handlePayOnline(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label required">Select Payment Gateway</label>
+                        <select class="form-select" id="payOnlineGateway" required onchange="toggleGatewayFields()">
+                            <option value="1">JazzCash (Mobile Account / Voucher)</option>
+                            <option value="2">EasyPaisa (Mobile Wallet / OTC)</option>
+                            <option value="3">Stripe (Visa / Mastercard International)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Payable Amount (PKR)</label>
+                        <input type="number" class="form-control fs-5 text-success fw-bold" id="payOnlineAmount" required min="1" step="0.01">
+                        <small class="text-secondary" id="lblOnlineRemainingBalance">Remaining Balance: PKR 0</small>
+                    </div>
+                    <div class="mb-3" id="groupCustomerMobile">
+                        <label class="form-label required">Mobile Wallet Number</label>
+                        <input type="tel" class="form-control" id="payOnlineMobile" placeholder="03001234567">
+                        <div class="form-text">Enter 11-digit JazzCash or EasyPaisa mobile number.</div>
+                    </div>
+                    <div class="mb-3" id="groupCustomerCnic">
+                        <label class="form-label">CNIC Last 6 Digits (Optional for JazzCash)</label>
+                        <input type="text" class="form-control" id="payOnlineCnic" placeholder="e.g. 123456" maxlength="6">
+                    </div>
+                    <div class="mb-3 d-none" id="groupCustomerEmail">
+                        <label class="form-label required">Receipt Email Address</label>
+                        <input type="email" class="form-control" id="payOnlineEmail" placeholder="parent@example.com">
+                    </div>
+                    <div class="alert alert-light border small text-muted mb-0">
+                        <i class="bi bi-lock-fill text-success me-1"></i> Payments are processed via encrypted secure gateway channels. Your fee invoice and receipt status will be updated immediately upon confirmation.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="btnSubmitOnlinePayment">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> Proceed to Checkout
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- HIDDEN PRINT TEMPLATE (Pakistani Standard 3-Copy Fee Challan) -->
+<div id="printReceiptContainer" class="d-none"></div>
+
+@section Styles {
+<style>
+    @@media print {
+        body * {
+            visibility: hidden;
+        }
+        #printReceiptContainer, #printReceiptContainer * {
+            visibility: visible;
+        }
+        #printReceiptContainer {
+            display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: #fff;
+            color: #000;
+            padding: 10px;
+        }
+        .challan-copy {
+            border: 2px solid #000;
+            padding: 15px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+}
+
+@section Scripts {
+<script>
+    let currentInvoiceId = null;
+    let currentInvoiceData = null;
+    let invCurrentPage = 1;
+    let invTotalPages = 1;
+    let defCurrentPage = 1;
+    let defTotalPages = 1;
+    let feeSearchTimeout = null;
+
+    let modalBulk = null;
+    let modalDetail = null;
+    let modalPay = null;
+    let modalRef = null;
+    let modalOnline = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!App.isAuthenticated()) {
+            window.location.href = "/login";
+            return;
+        }
+
+        modalBulk = new bootstrap.Modal(document.getElementById("modalBulkInvoice"));
+        modalDetail = new bootstrap.Modal(document.getElementById("modalInvoiceDetail"));
+        modalPay = new bootstrap.Modal(document.getElementById("modalRecordPayment"));
+        modalRef = new bootstrap.Modal(document.getElementById("modalRefund"));
+        modalOnline = new bootstrap.Modal(document.getElementById("modalPayOnline"));
+
+        // Default dates
+        const today = new Date().toISOString().split("T")[0];
+        document.getElementById("payDate").value = today;
+        document.getElementById("bulkIssueDate").value = today;
+        
+        const due = new Date();
+        due.setDate(due.getDate() + 10);
+        document.getElementById("bulkDueDate").value = due.toISOString().split("T")[0];
+
+        loadFeeSummary();
+        loadInvoices(1);
+    });
+
+    async function loadFeeSummary() {
+        const res = await apiFetch("/api/fees/summary");
+        if (res.ok && res.data && res.data.success) {
+            const d = res.data.data;
+            document.getElementById("kpiTotalBilled").textContent = "Rs. " + Number(d.totalInvoiced || 0).toLocaleString();
+            document.getElementById("kpiTotalCollected").textContent = "Rs. " + Number(d.totalCollected || 0).toLocaleString();
+            document.getElementById("kpiTotalOutstanding").textContent = "Rs. " + Number(d.totalOutstanding || 0).toLocaleString();
+            document.getElementById("kpiInvoiceCount").textContent = `${d.totalInvoicesCount || 0} Invoices`;
+            document.getElementById("kpiPaidCount").textContent = `${d.paidInvoicesCount || 0} Paid`;
+            document.getElementById("kpiOverdueCount").textContent = `${d.overdueInvoicesCount || 0} Overdue`;
+            
+            const rate = d.collectionRate || 0;
+            document.getElementById("kpiCollectionRate").textContent = rate.toFixed(1) + "%";
+            document.getElementById("kpiRateBar").style.width = Math.min(100, rate) + "%";
+        }
+    }
+
+    function debounceFeeSearch() {
+        clearTimeout(feeSearchTimeout);
+        feeSearchTimeout = setTimeout(() => loadInvoices(1), 300);
+    }
+
+    function resetFeeFilters() {
+        document.getElementById("txtFeeSearch").value = "";
+        document.getElementById("selFeeGrade").value = "";
+        document.getElementById("selFeeStatus").value = "";
+        document.getElementById("dtFeeFrom").value = "";
+        document.getElementById("dtFeeTo").value = "";
+        loadInvoices(1);
+    }
+
+    async function loadInvoices(page) {
+        invCurrentPage = page;
+        const tbody = document.getElementById("invoiceTableBody");
+        const search = document.getElementById("txtFeeSearch").value.trim();
+        const grade = document.getElementById("selFeeGrade").value;
+        const status = document.getElementById("selFeeStatus").value;
+        const fromDate = document.getElementById("dtFeeFrom").value;
+        const toDate = document.getElementById("dtFeeTo").value;
+
+        let url = `/api/fees/invoices?pageNumber=${invCurrentPage}&pageSize=15&`;
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (grade) url += `grade=${encodeURIComponent(grade)}&`;
+        if (status) url += `status=${encodeURIComponent(status)}&`;
+        if (fromDate) url += `fromDate=${encodeURIComponent(fromDate)}&`;
+        if (toDate) url += `toDate=${encodeURIComponent(toDate)}&`;
+
+        const res = await apiFetch(url);
+        if (res.ok && res.data && res.data.success) {
+            const data = res.data.data;
+            invTotalPages = data.totalPages || 1;
+            renderInvoiceTable(data);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger py-4">Failed to load invoices.</td></tr>`;
+        }
+    }
+
+    function renderInvoiceTable(data) {
+        const tbody = document.getElementById("invoiceTableBody");
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5 text-secondary"><i class="bi bi-inbox fs-2 d-block mb-2"></i> No fee invoices found matching the criteria.</td></tr>`;
+            document.getElementById("invoicePageSummary").textContent = "Showing 0 of 0 invoices";
+            return;
+        }
+
+        const statusBadges = {
+            1: { text: "Unpaid", cls: "bg-danger text-white" },
+            2: { text: "Partial", cls: "bg-warning text-dark" },
+            3: { text: "Paid", cls: "bg-success text-white" },
+            4: { text: "Overdue", cls: "bg-dark text-white" },
+            5: { text: "Cancelled", cls: "bg-secondary text-white" }
+        };
+
+        tbody.innerHTML = items.map(inv => {
+            const st = statusBadges[inv.status] || { text: inv.statusName || "Active", cls: "bg-secondary text-white" };
+            return `
+                <tr>
+                    <td class="ps-4">
+                        <span class="badge badge-saas-primary font-monospace">${inv.invoiceNumber}</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold">${inv.studentName}</div>
+                        <div class="small text-secondary">Roll: ${inv.admissionNumber}</div>
+                    </td>
+                    <td><div class="fw-semibold text-body">${inv.title}</div></td>
+                    <td><span class="badge bg-light text-dark border">${inv.grade}</span></td>
+                    <td class="fw-bold">Rs. ${Number(inv.totalAmount).toLocaleString()}</td>
+                    <td class="text-success">Rs. ${Number(inv.paidAmount).toLocaleString()}</td>
+                    <td class="fw-bold ${inv.balance > 0 ? 'text-danger' : 'text-success'}">Rs. ${Number(inv.balance).toLocaleString()}</td>
+                    <td><span class="small text-secondary">${new Date(inv.dueDate).toLocaleDateString()}</span></td>
+                    <td><span class="badge ${st.cls}">${st.text}</span></td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-saas-outline me-1" onclick="viewInvoiceDetail('${inv.id}')" title="View &amp; Pay">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        const start = data.totalCount === 0 ? 0 : (invCurrentPage - 1) * data.pageSize + 1;
+        const end = Math.min(invCurrentPage * data.pageSize, data.totalCount);
+        document.getElementById("invoicePageSummary").textContent = `Showing ${start} to ${end} of ${data.totalCount} invoices`;
+        document.getElementById("lblCurrentInvPage").textContent = `Page ${invCurrentPage} of ${invTotalPages}`;
+        document.getElementById("btnPrevInvPage").disabled = invCurrentPage <= 1;
+        document.getElementById("btnNextInvPage").disabled = invCurrentPage >= invTotalPages;
+    }
+
+    function changeInvoicePage(delta) {
+        const next = invCurrentPage + delta;
+        if (next >= 1 && next <= invTotalPages) loadInvoices(next);
+    }
+
+    async function loadDefaulters(page) {
+        defCurrentPage = page;
+        const tbody = document.getElementById("defaultersTableBody");
+        const grade = document.getElementById("selDefaulterGrade").value;
+        const minDays = document.getElementById("numDefaulterDays").value || 1;
+
+        let url = `/api/fees/defaulters?minDaysOverdue=${minDays}&pageNumber=${defCurrentPage}&pageSize=15&`;
+        if (grade) url += `grade=${encodeURIComponent(grade)}&`;
+
+        const res = await apiFetch(url);
+        if (res.ok && res.data && res.data.success) {
+            const data = res.data.data;
+            defTotalPages = data.totalPages || 1;
+            document.getElementById("badgeDefaultersCount").textContent = `${data.totalCount} Defaulters`;
+            renderDefaultersTable(data);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Failed to load defaulters.</td></tr>`;
+        }
+    }
+
+    function renderDefaultersTable(data) {
+        const tbody = document.getElementById("defaultersTableBody");
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-success"><i class="bi bi-check-circle fs-2 d-block mb-2"></i> Excellent! No overdue fee defaulters found.</td></tr>`;
+            document.getElementById("defaulterPageSummary").textContent = "Showing 0 defaulters";
+            return;
+        }
+
+        tbody.innerHTML = items.map(d => `
+            <tr>
+                <td class="ps-4">
+                    <div class="fw-bold">${d.studentName}</div>
+                    <div class="small text-secondary">Adm: ${d.admissionNumber}</div>
+                </td>
+                <td><span class="badge bg-light text-dark border">${d.grade} - ${d.section || 'General'}</span></td>
+                <td><div class="small fw-medium">${d.primaryGuardianName || '-'}</div></td>
+                <td><div class="small font-monospace"><i class="bi bi-telephone me-1"></i>${d.primaryGuardianPhone || '-'}</div></td>
+                <td class="fw-bold text-danger">Rs. ${Number(d.amountDue).toLocaleString()}</td>
+                <td><span class="small">${new Date(d.dueDate).toLocaleDateString()}</span></td>
+                <td><span class="badge bg-danger">${d.daysOverdue} Days Late</span></td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-saas-primary" onclick="viewInvoiceDetail('${d.invoiceId}')">
+                        <i class="bi bi-credit-card me-1"></i> Collect
+                    </button>
+                </td>
+            </tr>
+        `).join("");
+
+        document.getElementById("defaulterPageSummary").textContent = `Showing ${items.length} of ${data.totalCount} defaulters`;
+        document.getElementById("lblCurrentDefPage").textContent = `Page ${defCurrentPage} of ${defTotalPages}`;
+        document.getElementById("btnPrevDefPage").disabled = defCurrentPage <= 1;
+        document.getElementById("btnNextDefPage").disabled = defCurrentPage >= defTotalPages;
+    }
+
+    function changeDefaulterPage(delta) {
+        const next = defCurrentPage + delta;
+        if (next >= 1 && next <= defTotalPages) loadDefaulters(next);
+    }
+
+    function openBulkInvoiceModal() {
+        document.getElementById("formBulkInvoice").reset();
+        modalBulk.show();
+    }
+
+    async function handleBulkInvoice(e) {
+        e.preventDefault();
+        const btn = document.getElementById("btnSubmitBulk");
+        const spin = document.getElementById("bulkSpinner");
+        btn.disabled = true;
+        spin.classList.remove("d-none");
+
+        const body = {
+            title: document.getElementById("bulkTitle").value.trim(),
+            amount: parseFloat(document.getElementById("bulkAmount").value),
+            classGrade: document.getElementById("bulkGrade").value.trim() || null,
+            section: document.getElementById("bulkSection").value.trim() || null,
+            issueDate: document.getElementById("bulkIssueDate").value,
+            dueDate: document.getElementById("bulkDueDate").value,
+            discountPercentage: parseFloat(document.getElementById("bulkDiscount").value) || 0,
+            remarks: document.getElementById("bulkRemarks").value.trim() || null
+        };
+
+        const res = await apiFetch("/api/fees/invoices/bulk-generate", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        btn.disabled = false;
+        spin.classList.add("d-none");
+
+        if (res.ok && res.data && res.data.success) {
+            showToast(res.data.message || "Bulk fee invoices generated successfully!", "success");
+            modalBulk.hide();
+            loadFeeSummary();
+            loadInvoices(1);
+        } else {
+            showToast("Generation failed: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    async function viewInvoiceDetail(id) {
+        currentInvoiceId = id;
+        const bodyEl = document.getElementById("invoiceDetailBody");
+        bodyEl.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>`;
+        modalDetail.show();
+
+        const res = await apiFetch(`/api/fees/invoices/${id}`);
+        if (res.ok && res.data && res.data.success) {
+            const inv = res.data.data;
+            currentInvoiceData = inv;
+
+            const payments = inv.payments || [];
+            bodyEl.innerHTML = `
+                <div class="p-3 rounded-3 mb-4" style="background: rgba(146, 78, 192, 0.06); border-left: 4px solid var(--saas-primary);">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge badge-saas-primary font-monospace fs-6 mb-1">${inv.invoiceNumber}</span>
+                            <h4 class="fw-bold mb-0">${inv.title}</h4>
+                            <div class="small text-secondary mt-1">
+                                Student: <strong>${inv.studentName}</strong> (Roll: ${inv.admissionNumber}) &bull; Class: <strong>${inv.grade}</strong>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge ${inv.balance <= 0 ? 'bg-success' : 'bg-danger'} fs-6">${inv.statusName}</span>
+                            <div class="small text-secondary mt-1">Due: ${new Date(inv.dueDate).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-4 text-center p-2 rounded bg-light">
+                        <div class="small text-secondary">Total Amount</div>
+                        <div class="fs-5 fw-bold">Rs. ${Number(inv.totalAmount).toLocaleString()}</div>
+                    </div>
+                    <div class="col-4 text-center p-2 rounded bg-light">
+                        <div class="small text-secondary">Paid to Date</div>
+                        <div class="fs-5 fw-bold text-success">Rs. ${Number(inv.paidAmount).toLocaleString()}</div>
+                    </div>
+                    <div class="col-4 text-center p-2 rounded bg-light">
+                        <div class="small text-secondary">Outstanding Balance</div>
+                        <div class="fs-5 fw-bold ${inv.balance > 0 ? 'text-danger' : 'text-success'}">Rs. ${Number(inv.balance).toLocaleString()}</div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i> Payment Transactions Timeline</h6>
+                ${payments.length > 0 ? `
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Receipt #</th>
+                                    <th>Method</th>
+                                    <th>Ref / Slip</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Received By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${payments.map(p => `
+                                    <tr>
+                                        <td><span class="badge bg-light text-dark font-monospace border">${p.receiptNumber}</span></td>
+                                        <td><span class="badge badge-saas-primary">${p.paymentMethodName}</span></td>
+                                        <td class="small text-muted font-monospace">${p.transactionReference || '-'}</td>
+                                        <td class="small">${new Date(p.paymentDate).toLocaleDateString()}</td>
+                                        <td class="fw-bold text-success">Rs. ${Number(p.amount).toLocaleString()}</td>
+                                        <td class="small text-secondary">${p.receivedBy || 'Counter'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : '<div class="text-secondary small py-2">No payment transactions recorded yet for this invoice.</div>'}
+            `;
+
+            document.getElementById("btnOpenRecordPayment").style.display = inv.balance > 0 ? "inline-block" : "none";
+            document.getElementById("btnOpenPayOnline").style.display = inv.balance > 0 ? "inline-block" : "none";
+            document.getElementById("btnOpenRefund").style.display = inv.paidAmount > 0 ? "inline-block" : "none";
+        } else {
+            bodyEl.innerHTML = `<div class="text-center text-danger py-4">Failed to load invoice details.</div>`;
+        }
+    }
+
+    function openRecordPaymentModal() {
+        if (!currentInvoiceData) return;
+        document.getElementById("formRecordPayment").reset();
+        document.getElementById("payAmount").value = currentInvoiceData.balance;
+        document.getElementById("lblRemainingBalance").textContent = `Remaining Balance: PKR ${Number(currentInvoiceData.balance).toLocaleString()}`;
+        document.getElementById("payDate").value = new Date().toISOString().split("T")[0];
+        modalPay.show();
+    }
+
+    async function handleRecordPayment(e) {
+        e.preventDefault();
+        const amt = parseFloat(document.getElementById("payAmount").value);
+        if (amt <= 0) return;
+
+        const body = {
+            amount: amt,
+            paymentMethod: parseInt(document.getElementById("payMethod").value),
+            transactionReference: document.getElementById("payReference").value.trim() || null,
+            notes: document.getElementById("payNotes").value.trim() || null,
+            paymentDate: document.getElementById("payDate").value
+        };
+
+        const res = await apiFetch(`/api/fees/invoices/${currentInvoiceId}/payments`, {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        if (res.ok && res.data && res.data.success) {
+            showToast("Payment recorded successfully!", "success");
+            modalPay.hide();
+            viewInvoiceDetail(currentInvoiceId);
+            loadFeeSummary();
+            loadInvoices(invCurrentPage);
+        } else {
+            showToast("Payment failed: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    function openRefundModal() {
+        if (!currentInvoiceData) return;
+        document.getElementById("formRefund").reset();
+        document.getElementById("refundAmount").value = currentInvoiceData.paidAmount;
+        document.getElementById("lblMaxRefund").textContent = `Max refundable: PKR ${Number(currentInvoiceData.paidAmount).toLocaleString()}`;
+        modalRef.show();
+    }
+
+    async function handleRefund(e) {
+        e.preventDefault();
+        const amt = parseFloat(document.getElementById("refundAmount").value);
+        const reason = document.getElementById("refundReason").value.trim();
+
+        const res = await apiFetch(`/api/fees/invoices/${currentInvoiceId}/refund`, {
+            method: "POST",
+            body: JSON.stringify({ amount: amt, reason: reason })
+        });
+
+        if (res.ok && res.data && res.data.success) {
+            showToast("Fee refund processed successfully.", "success");
+            modalRef.hide();
+            viewInvoiceDetail(currentInvoiceId);
+            loadFeeSummary();
+            loadInvoices(invCurrentPage);
+        } else {
+            showToast("Refund failed: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    function openPayOnlineModal() {
+        if (!currentInvoiceData) return;
+        document.getElementById("formPayOnline").reset();
+        document.getElementById("payOnlineGateway").value = "1";
+        toggleGatewayFields();
+        document.getElementById("payOnlineAmount").value = currentInvoiceData.balance;
+        document.getElementById("lblOnlineRemainingBalance").textContent = `Remaining Balance: PKR ${Number(currentInvoiceData.balance).toLocaleString()}`;
+        modalOnline.show();
+    }
+
+    function toggleGatewayFields() {
+        const gw = document.getElementById("payOnlineGateway").value;
+        const groupMobile = document.getElementById("groupCustomerMobile");
+        const groupCnic = document.getElementById("groupCustomerCnic");
+        const groupEmail = document.getElementById("groupCustomerEmail");
+        const mobileInput = document.getElementById("payOnlineMobile");
+        const emailInput = document.getElementById("payOnlineEmail");
+
+        if (gw === "3") {
+            // Stripe
+            groupMobile.classList.add("d-none");
+            groupCnic.classList.add("d-none");
+            groupEmail.classList.remove("d-none");
+            mobileInput.removeAttribute("required");
+            emailInput.setAttribute("required", "required");
+        } else {
+            // JazzCash or EasyPaisa
+            groupMobile.classList.remove("d-none");
+            groupCnic.classList.remove("d-none");
+            groupEmail.classList.add("d-none");
+            mobileInput.setAttribute("required", "required");
+            emailInput.removeAttribute("required");
+        }
+    }
+
+    async function handlePayOnline(e) {
+        e.preventDefault();
+        const amt = parseFloat(document.getElementById("payOnlineAmount").value);
+        if (amt <= 0) return;
+
+        const gw = parseInt(document.getElementById("payOnlineGateway").value);
+        const btn = document.getElementById("btnSubmitOnlinePayment");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Contacting Gateway...`;
+
+        const payload = {
+            amount: amt,
+            gateway: gw,
+            customerMobile: document.getElementById("payOnlineMobile").value.trim() || null,
+            customerCnic: document.getElementById("payOnlineCnic").value.trim() || null,
+            customerEmail: document.getElementById("payOnlineEmail").value.trim() || null,
+            successUrl: window.location.origin + "/fees?paid=1",
+            cancelUrl: window.location.origin + "/fees?canceled=1"
+        };
+
+        try {
+            const res = await apiFetch(`/api/fees/invoices/${currentInvoiceId}/pay-online`, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok && res.data && res.data.success) {
+                const initResult = res.data.data;
+                modalOnline.hide();
+                if (initResult.redirectUrl) {
+                    Swal.fire({
+                        title: "Redirecting to Payment Gateway",
+                        text: "You are being redirected to complete payment securely...",
+                        icon: "info",
+                        showConfirmButton: true,
+                        confirmButtonText: "Open Gateway Checkout"
+                    }).then(() => {
+                        window.open(initResult.redirectUrl, "_blank");
+                    });
+                } else {
+                    Swal.fire({
+                        title: "Payment Initiated",
+                        html: `<p>${initResult.message || 'Payment request submitted.'}</p><p class="small text-muted font-monospace">Ref: ${initResult.transactionReference || ''}</p>`,
+                        icon: "success"
+                    });
+                }
+                viewInvoiceDetail(currentInvoiceId);
+                loadFeeSummary();
+                loadInvoices(invCurrentPage);
+            } else {
+                showToast("Online payment initialization failed: " + (res.data?.message || "Error"), "danger");
+            }
+        } catch (err) {
+            showToast("Network error contacting payment service.", "danger");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-box-arrow-up-right me-1"></i> Proceed to Checkout`;
+        }
+    }
+
+    function printChallanReceipt() {
+        if (!currentInvoiceData) return;
+        const inv = currentInvoiceData;
+        const container = document.getElementById("printReceiptContainer");
+
+        // Pakistani Standard 3-Copy Fee Challan: Bank Copy, School Copy, Student Copy
+        const copies = ["BANK COPY", "ACCOUNTS / SCHOOL COPY", "STUDENT / PARENT COPY"];
+        container.innerHTML = copies.map(copyTitle => `
+            <div class="challan-copy">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-0">THE CITIZENS ACADEMY / SCHOOL SYSTEM</h4>
+                        <div class="small">Main Campus &bull; Affiliated &bull; Official Fee Challan</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge border border-dark text-dark fw-bold">${copyTitle}</span>
+                        <div class="small mt-1">Challan #: <strong>${inv.invoiceNumber}</strong></div>
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3 small">
+                    <div class="col-6">Student Name: <strong>${inv.studentName}</strong></div>
+                    <div class="col-6">Admission / Roll: <strong>${inv.admissionNumber}</strong></div>
+                    <div class="col-6">Class &amp; Section: <strong>${inv.grade}</strong></div>
+                    <div class="col-6">Due Date: <strong>${new Date(inv.dueDate).toLocaleDateString()}</strong></div>
+                </div>
+
+                <table class="table table-bordered table-sm mb-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Particulars / Fee Head</th>
+                            <th class="text-end">Amount (PKR)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${inv.title}</td>
+                            <td class="text-end">${Number(inv.totalAmount).toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Payable on or before Due Date</strong></td>
+                            <td class="text-end fw-bold">PKR ${Number(inv.totalAmount).toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                            <td>Late Fee Surcharge (After Due Date)</td>
+                            <td class="text-end">PKR 300</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="d-flex justify-content-between align-items-end mt-4 pt-3 border-top small">
+                    <div>
+                        <div>Authorized Bank: <strong>Habib Bank Limited / Meezan Bank</strong></div>
+                        <div class="text-muted">Account #: 0123-45678901234</div>
+                    </div>
+                    <div class="text-center" style="min-width: 150px;">
+                        <div class="border-bottom pb-3"></div>
+                        <div class="mt-1">Bank Cashier / Officer Signature</div>
+                    </div>
+                </div>
+            </div>
+        `).join("");
+
+        window.print();
+    }
+
+    function exportInvoicesCsv() {
+        window.open("/api/reports/export/fees", "_blank");
+    }
+</script>
+}

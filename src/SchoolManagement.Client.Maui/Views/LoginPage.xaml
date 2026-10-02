@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SchoolManagement.Client.Maui.ViewModels"
+             x:Class="SchoolManagement.Client.Maui.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             BackgroundColor="{StaticResource DarkBase}"
+             NavigationPage.HasNavigationBar="False">
+
+    <ScrollView>
+        <Grid VerticalOptions="Center" HorizontalOptions="Center" Padding="20">
+            <!-- Modern 2026 SaaS Login Card -->
+            <Border BackgroundColor="{StaticResource DarkCard}"
+                    Stroke="{StaticResource DarkBorder}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 16"
+                    MaximumWidthRequest="460"
+                    WidthRequest="420"
+                    Padding="32">
+                
+                <VerticalStackLayout Spacing="20">
+                    <!-- Brand Logo & Header -->
+                    <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Image Source="logo_horizontal_dark_theme.png"
+                               HeightRequest="48"
+                               Aspect="AspectFit"
+                               HorizontalOptions="Center" />
+                        <Label Text="School Management Platform"
+                               TextColor="{StaticResource Gray400}"
+                               FontSize="13"
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+
+                    <!-- Divider -->
+                    <BoxView HeightRequest="1" Color="{StaticResource DarkBorder}" Margin="0,5" />
+
+                    <!-- Title -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Welcome Back"
+                               TextColor="{StaticResource White}"
+                               FontSize="22"
+                               FontAttributes="Bold" />
+                        <Label Text="Sign in to your school management account"
+                               TextColor="{StaticResource Gray400}"
+                               FontSize="13" />
+                    </VerticalStackLayout>
+
+                    <!-- Error Alert Banner -->
+                    <Border IsVisible="{Binding HasError}"
+                            BackgroundColor="#2D1518"
+                            Stroke="{StaticResource Danger}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12,10">
+                        <HorizontalStackLayout Spacing="10">
+                            <Label Text="&#x26A0;" TextColor="{StaticResource Danger}" FontSize="16" VerticalOptions="Center" />
+                            <Label Text="{Binding ErrorMessage}"
+                                   TextColor="#FFB4B8"
+                                   FontSize="13"
+                                   LineBreakMode="WordWrap"
+                                   VerticalOptions="Center"
+                                   MaximumWidthRequest="320" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <!-- Inputs -->
+                    <VerticalStackLayout Spacing="14">
+                        <!-- Username / Email -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Username or Email"
+                                   TextColor="{StaticResource Gray300}"
+                                   FontSize="12"
+                                   FontAttributes="Bold" />
+                            <Border BackgroundColor="{StaticResource DarkElevated}"
+                                    Stroke="{StaticResource DarkBorder}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    HeightRequest="46"
+                                    Padding="12,0">
+                                <Entry Text="{Binding EmailOrUsername}"
+                                       Placeholder="admin@school.edu"
+                                       PlaceholderColor="{StaticResource Gray500}"
+                                       TextColor="{StaticResource White}"
+                                       FontSize="14"
+                                       VerticalOptions="Center" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- Password -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Password"
+                                   TextColor="{StaticResource Gray300}"
+                                   FontSize="12"
+                                   FontAttributes="Bold" />
+                            <Border BackgroundColor="{StaticResource DarkElevated}"
+                                    Stroke="{StaticResource DarkBorder}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    HeightRequest="46"
+                                    Padding="12,0">
+                                <Entry Text="{Binding Password}"
+                                       IsPassword="True"
+                                       Placeholder="••••••••"
+                                       PlaceholderColor="{StaticResource Gray500}"
+                                       TextColor="{StaticResource White}"
+                                       FontSize="14"
+                                       VerticalOptions="Center" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- Remember Me & Forgot Password -->
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="8" VerticalOptions="Center">
+                                <CheckBox IsChecked="{Binding RememberMe}"
+                                          Color="{StaticResource Primary}"
+                                          VerticalOptions="Center" />
+                                <Label Text="Remember me"
+                                       TextColor="{StaticResource Gray400}"
+                                       FontSize="12"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+
+                            <Label Grid.Column="1"
+                                   Text="Forgot Password?"
+                                   TextColor="{StaticResource PrimaryLight}"
+                                   FontSize="12"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+
+                    <!-- Sign In Button & Spinner -->
+                    <Grid>
+                        <Button Text="Sign In to Platform"
+                                Command="{Binding LoginCommand}"
+                                IsVisible="{Binding IsNotBusy}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="{StaticResource White}"
+                                FontAttributes="Bold"
+                                FontSize="15"
+                                HeightRequest="48"
+                                CornerRadius="8" />
+
+                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                           IsVisible="{Binding IsBusy}"
+                                           Color="{StaticResource PrimaryLight}"
+                                           HeightRequest="40"
+                                           WidthRequest="40"
+                                           HorizontalOptions="Center" />
+                    </Grid>
+
+                    <!-- Footer Note -->
+                    <Label Text="Powered by Pak2Source • Enterprise Cloud &amp; Offline Sync"
+                           TextColor="{StaticResource Gray500}"
+                           FontSize="11"
+                           HorizontalOptions="Center"
+                           Margin="0,10,0,0" />
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </ScrollView>
+
+</ContentPage>

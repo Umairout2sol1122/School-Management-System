@@ -1,0 +1,739 @@
+@{
+    ViewData["Title"] = "Certificates & Clearance Management";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-patch-check-fill text-primary me-2"></i>Certificates &amp; Student Clearance</h2>
+            <p class="text-muted mb-0">Official academic credentials, clearance verification, tamper-evident QR verification &amp; PDF generation</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/verify-certificate" target="_blank" class="btn btn-outline-info">
+                <i class="bi bi-shield-check me-1"></i>Public Verification Portal
+            </a>
+            <button class="btn btn-primary" onclick="openIssueModal()">
+                <i class="bi bi-file-earmark-plus-fill me-1"></i>Issue New Certificate
+            </button>
+        </div>
+    </div>
+
+    <!-- Stat KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-primary-subtle text-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">Total Issued</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statTotalIssued">0</h3>
+                    </div>
+                    <div class="fs-1 text-primary opacity-75"><i class="bi bi-award-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-success-subtle text-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">Transfer (TC / SLC)</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statTotalTc">0</h3>
+                    </div>
+                    <div class="fs-1 text-success opacity-75"><i class="bi bi-box-arrow-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-info-subtle text-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">Character &amp; Bonafide</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statTotalCharacter">0</h3>
+                    </div>
+                    <div class="fs-1 text-info opacity-75"><i class="bi bi-file-earmark-person-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-warning-subtle text-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">Active Credentials</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statActive">0</h3>
+                    </div>
+                    <div class="fs-1 text-warning opacity-75"><i class="bi bi-patch-check"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card & Filters -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-bottom p-3">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" id="certSearch" class="form-control bg-light border-start-0" placeholder="Search by student, serial number, admission #..." oninput="filterCertificates()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="certTypeFilter" class="form-select bg-light" onchange="loadCertificates()">
+                        <option value="">All Certificate Types</option>
+                        <option value="1">Transfer Certificate (TC)</option>
+                        <option value="2">Character Certificate</option>
+                        <option value="3">Bonafide Certificate</option>
+                        <option value="4">School Leaving Certificate (SLC)</option>
+                        <option value="5">Sports Certificate</option>
+                        <option value="6">Merit Certificate</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="certStatusFilter" class="form-select bg-light" onchange="filterCertificates()">
+                        <option value="">All Statuses</option>
+                        <option value="Issued">Issued (Active)</option>
+                        <option value="Revoked">Revoked / Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button class="btn btn-outline-secondary w-100" onclick="loadCertificates()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="certificatesTable">
+                    <thead class="table-light text-muted text-uppercase fs-7">
+                        <tr>
+                            <th class="ps-3">Serial No</th>
+                            <th>Certificate Type</th>
+                            <th>Student Details</th>
+                            <th>Class / Section</th>
+                            <th>Issue Date</th>
+                            <th>Issued By</th>
+                            <th>Status</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="certificatesList">
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                Loading certificates registry...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Issue Certificate & Clearance Check -->
+<div class="modal fade" id="issueCertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-file-earmark-plus text-primary me-2"></i>Issue Academic Certificate
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="issueCertForm" onsubmit="handleGenerateCertificate(event)">
+                    <div class="row g-3">
+                        <!-- Select Student -->
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Select Student <span class="text-danger">*</span></label>
+                            <select id="issueStudentSelect" class="form-select" required onchange="handleStudentSelected()">
+                                <option value="">-- Choose Student --</option>
+                            </select>
+                            <small class="text-muted">Type or pick from active student roll</small>
+                        </div>
+
+                        <!-- Certificate Type -->
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Certificate Type <span class="text-danger">*</span></label>
+                            <select id="issueCertType" class="form-select" required onchange="handleTypeChange()">
+                                <option value="1">Transfer Certificate (TC)</option>
+                                <option value="2">Character Certificate</option>
+                                <option value="3">Bonafide Certificate</option>
+                                <option value="4">School Leaving Certificate (SLC)</option>
+                                <option value="5">Sports Certificate</option>
+                                <option value="6">Merit Certificate</option>
+                            </select>
+                        </div>
+
+                        <!-- Clearance Verification Checklist Box -->
+                        <div class="col-12" id="clearanceBox" style="display: none;">
+                            <div class="card border rounded-3 p-3 bg-light" id="clearanceCard">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">
+                                        <i class="bi bi-shield-lock-fill text-secondary me-1"></i>Mandatory Institutional Clearance
+                                    </h6>
+                                    <span id="clearanceBadge" class="badge bg-secondary">Checking...</span>
+                                </div>
+                                <div id="clearanceDetails" class="small text-muted">
+                                    Select a student to evaluate fee accounts and library ledger clearance.
+                                </div>
+                                
+                                <!-- Override / Bypass Checkbox -->
+                                <div class="mt-3 pt-2 border-top" id="bypassArea" style="display: none;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="bypassCheck" onchange="toggleBypassReason()">
+                                        <label class="form-check-label fw-semibold text-danger" for="bypassCheck">
+                                            Administrative Clearance Bypass (Requires Justification)
+                                        </label>
+                                    </div>
+                                    <div class="mt-2" id="bypassReasonGroup" style="display: none;">
+                                        <input type="text" id="bypassReason" class="form-control form-control-sm" placeholder="Reason for clearance override (e.g., Principal approval, installment guarantee)...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Certificate Details -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Conduct / Moral Character</label>
+                            <select id="issueConduct" class="form-select">
+                                <option value="Exemplary">Exemplary</option>
+                                <option value="Excellent" selected>Excellent</option>
+                                <option value="Very Good">Very Good</option>
+                                <option value="Good">Good</option>
+                                <option value="Satisfactory">Satisfactory</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Promoted To Class</label>
+                            <input type="text" id="issuePromotedTo" class="form-control" placeholder="e.g. Class 10 (Matric) / Completed">
+                        </div>
+
+                        <div class="col-12" id="leavingReasonRow">
+                            <label class="form-label fw-semibold">Reason for Leaving</label>
+                            <input type="text" id="issueLeavingReason" class="form-control" placeholder="e.g., Family relocation / Admission to higher institution / Completed course">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Remarks / Accolades</label>
+                            <textarea id="issueRemarks" class="form-control" rows="2" placeholder="Optional remarks, notable accomplishments or co-curricular achievements"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top text-end d-flex justify-content-between align-items-center">
+                        <span class="text-muted small"><i class="bi bi-qr-code me-1"></i>Cryptographic QR token generated automatically</span>
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="btnSubmitGenerate">
+                                <i class="bi bi-patch-check-fill me-1"></i>Generate Credential
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Certificate Printable View -->
+<div class="modal fade" id="printCertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom p-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-printer-fill text-primary me-2"></i>Official Certificate Preview</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="downloadCurrentPdf()">
+                        <i class="bi bi-file-earmark-pdf-fill me-1"></i>Download Vector PDF
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="printCertificateView()">
+                        <i class="bi bi-printer me-1"></i>Print Document
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4 bg-light overflow-auto">
+                <div id="printableCertificateContainer" class="bg-white p-5 mx-auto shadow-sm position-relative" style="max-width: 900px; min-height: 580px; border: 8px double #1a365d; border-radius: 4px; font-family: 'Georgia', serif;">
+                    <!-- Inner Ornamental Gold Border -->
+                    <div style="border: 2px solid #d4af37; padding: 25px; min-height: 520px; position: relative; background: #fffcf7;">
+                        <!-- School Header -->
+                        <div class="text-center mb-3">
+                            <h2 class="fw-bold mb-0 text-uppercase" style="color: #1a365d; letter-spacing: 1px;" id="pvSchoolName">School Management System</h2>
+                            <p class="text-muted small mb-1" id="pvBranchName">Main Campus | Islamic Republic of Pakistan</p>
+                            <div class="small fw-bold text-uppercase" style="color: #d4af37; letter-spacing: 2px;">Official Academic Credential</div>
+                            <hr style="border-top: 2px solid #d4af37; width: 80%; margin: 8px auto;" />
+                        </div>
+
+                        <!-- Certificate Title Banner -->
+                        <div class="text-center my-3">
+                            <span class="px-4 py-2 text-white fw-bold text-uppercase rounded-1 d-inline-block shadow-sm" style="background: #1a365d; font-size: 1.15rem; letter-spacing: 1px;" id="pvTitle">
+                                Transfer Certificate
+                            </span>
+                        </div>
+
+                        <!-- Serial & Date -->
+                        <div class="d-flex justify-content-between small text-muted mb-3 px-2">
+                            <span><strong>Certificate No:</strong> <span id="pvSerial" class="text-dark fw-bold">TC-0001</span></span>
+                            <span><strong>Date of Issue:</strong> <span id="pvDate" class="text-dark fw-bold">--</span></span>
+                        </div>
+
+                        <!-- Cert Body -->
+                        <div class="text-center mb-4">
+                            <p class="mb-2" style="font-size: 1.05rem; color: #4a5568;">This is to certify that</p>
+                            <h3 class="fw-bold text-uppercase mb-2" style="color: #1a365d; text-decoration: underline; text-decoration-color: #d4af37;" id="pvStudentName">
+                                Student Name
+                            </h3>
+                            <p class="mb-3 text-secondary" style="font-size: 1rem;">
+                                Son / Daughter of <strong id="pvFatherName" class="text-dark">Father Name</strong>, bearing Admission No: <strong id="pvAdmissionNo" class="text-dark">--</strong> and Roll No: <strong id="pvRollNo" class="text-dark">--</strong>, was a bonafide student of this institution.
+                            </p>
+                        </div>
+
+                        <!-- Details Grid -->
+                        <div class="row g-2 mb-4 px-4 small" style="background: #ffffff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <div class="col-6"><strong>Class &amp; Section:</strong> <span id="pvClass">--</span></div>
+                            <div class="col-6"><strong>Character &amp; Conduct:</strong> <span id="pvConduct" class="fw-bold text-success">Good</span></div>
+                            <div class="col-6"><strong>Promoted To Class:</strong> <span id="pvPromoted">--</span></div>
+                            <div class="col-6"><strong>Reason for Leaving:</strong> <span id="pvReason">--</span></div>
+                            <div class="col-12 mt-2 pt-2 border-top"><strong>Remarks:</strong> <span id="pvRemarks" class="text-muted">--</span></div>
+                        </div>
+
+                        <!-- Verification & Signature Block -->
+                        <div class="d-flex justify-content-between align-items-end mt-4 pt-3">
+                            <!-- Digital QR Box -->
+                            <div class="p-2 border rounded text-start" style="width: 250px; background: #f8fafc; border-color: #d4af37 !important;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-dark text-white p-2 rounded text-center" style="font-size: 1.5rem;">
+                                        <i class="bi bi-qr-code"></i>
+                                    </div>
+                                    <div style="font-size: 0.72rem; line-height: 1.2;">
+                                        <strong class="text-primary d-block">DIGITALLY VERIFIED</strong>
+                                        <span class="text-muted">Code:</span> <span id="pvCode" class="fw-bold text-dark">--</span><br />
+                                        <span class="text-muted">Verify online at:</span><br />
+                                        <span class="text-primary fw-semibold" style="word-break: break-all;">schoolsync.edu.pk/verify-certificate</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Official Seal -->
+                            <div class="text-center" style="width: 110px;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; border: 2px dashed #d4af37; color: #d4af37; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">
+                                    Official<br />Seal
+                                </div>
+                            </div>
+
+                            <!-- Signatures -->
+                            <div class="d-flex gap-4 text-center">
+                                <div style="width: 140px;">
+                                    <div style="border-bottom: 1px solid #718096; height: 35px;"></div>
+                                    <span class="small text-muted">Class Incharge</span>
+                                </div>
+                                <div style="width: 160px;">
+                                    <div style="border-bottom: 1.5px solid #1a365d; height: 35px;"></div>
+                                    <span class="small fw-bold text-dark" id="pvSignatory">Principal / Head</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@@media print {
+    body * { visibility: hidden !important; }
+    #printableCertificateContainer, #printableCertificateContainer * { visibility: visible !important; }
+    #printableCertificateContainer {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: 4px double #1a365d !important;
+    }
+}
+</style>
+
+@section Scripts {
+<script>
+    let certificatesData = [];
+    let currentViewingCertId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCertificates();
+        loadStudentsDropdown();
+    });
+
+    async function loadCertificates() {
+        try {
+            const token = localStorage.getItem('token');
+            const type = document.getElementById('certTypeFilter').value;
+            let url = '/api/certificates';
+            if (type) url += `?type=${type}`;
+
+            const res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if (data.success && Array.isArray(data.data)) {
+                certificatesData = data.data;
+                renderCertificatesTable(certificatesData);
+                updateKPIs(certificatesData);
+            } else {
+                document.getElementById('certificatesList').innerHTML = `
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No certificates found.</td></tr>`;
+            }
+        } catch (err) {
+            console.error('Failed to load certificates:', err);
+            document.getElementById('certificatesList').innerHTML = `
+                <tr><td colspan="8" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error loading certificates.</td></tr>`;
+        }
+    }
+
+    function renderCertificatesTable(certs) {
+        const tbody = document.getElementById('certificatesList');
+        if (!certs || certs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted">No credentials recorded.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = certs.map(c => {
+            const statusBadge = c.statusName === 'Issued'
+                ? '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle-fill me-1"></i>Issued</span>'
+                : '<span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-x-circle-fill me-1"></i>Revoked</span>';
+
+            const typeColor = c.certificateType === 1 || c.certificateType === 4 ? 'text-primary' : 'text-info';
+
+            return `
+                <tr>
+                    <td class="ps-3 fw-bold text-nowrap"><code class="text-dark bg-light px-2 py-1 rounded">${escapeHtml(c.serialNumber)}</code></td>
+                    <td><span class="fw-semibold ${typeColor}"><i class="bi bi-award me-1"></i>${escapeHtml(c.certificateTypeName)}</span></td>
+                    <td>
+                        <div class="fw-bold">${escapeHtml(c.studentName)}</div>
+                        <div class="small text-muted">Adm: ${escapeHtml(c.admissionNumber)} | Father: ${escapeHtml(c.fatherName || 'N/A')}</div>
+                    </td>
+                    <td>${escapeHtml(c.className || 'N/A')} ${c.sectionName ? `(${escapeHtml(c.sectionName)})` : ''}</td>
+                    <td class="text-muted small">${new Date(c.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                    <td class="small">${escapeHtml(c.issuedByName || 'Administrator')}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-end pe-3">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" title="Preview / Print" onclick="openPrintModal('${c.id}')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-success" title="Download Vector PDF" onclick="downloadPdf('${c.id}', '${c.serialNumber}')">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </button>
+                            <a href="/verify-certificate?code=${encodeURIComponent(c.verificationCode)}" target="_blank" class="btn btn-outline-info" title="Test Verification">
+                                <i class="bi bi-shield-check"></i>
+                            </a>
+                            ${c.statusName === 'Issued' ? `
+                                <button class="btn btn-outline-danger" title="Revoke Certificate" onclick="promptRevoke('${c.id}', '${c.serialNumber}')">
+                                    <i class="bi bi-slash-circle"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updateKPIs(certs) {
+        document.getElementById('statTotalIssued').innerText = certs.length;
+        document.getElementById('statTotalTc').innerText = certs.filter(c => c.certificateType === 1 || c.certificateType === 4).length;
+        document.getElementById('statTotalCharacter').innerText = certs.filter(c => c.certificateType === 2 || c.certificateType === 3).length;
+        document.getElementById('statActive').innerText = certs.filter(c => c.statusName === 'Issued').length;
+    }
+
+    function filterCertificates() {
+        const query = document.getElementById('certSearch').value.toLowerCase();
+        const status = document.getElementById('certStatusFilter').value;
+
+        const filtered = certificatesData.filter(c => {
+            const matchesQuery = !query ||
+                c.serialNumber.toLowerCase().includes(query) ||
+                c.studentName.toLowerCase().includes(query) ||
+                c.admissionNumber.toLowerCase().includes(query) ||
+                (c.fatherName && c.fatherName.toLowerCase().includes(query));
+            
+            const matchesStatus = !status || c.statusName === status;
+            return matchesQuery && matchesStatus;
+        });
+
+        renderCertificatesTable(filtered);
+    }
+
+    async function loadStudentsDropdown() {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/students?pageSize=100', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.data && Array.isArray(data.data.items)) {
+                const select = document.getElementById('issueStudentSelect');
+                select.innerHTML = '<option value="">-- Choose Student --</option>' +
+                    data.data.items.map(s => `<option value="${s.id}">${escapeHtml(s.fullName)} (Adm: ${escapeHtml(s.admissionNumber)} - ${escapeHtml(s.currentGrade || '')})</option>`).join('');
+            }
+        } catch (err) {
+            console.error('Failed to load students:', err);
+        }
+    }
+
+    async function handleStudentSelected() {
+        const studentId = document.getElementById('issueStudentSelect').value;
+        const certType = parseInt(document.getElementById('issueCertType').value, 10);
+        const clearanceBox = document.getElementById('clearanceBox');
+
+        if (!studentId) {
+            clearanceBox.style.display = 'none';
+            return;
+        }
+
+        clearanceBox.style.display = 'block';
+        const badge = document.getElementById('clearanceBadge');
+        const details = document.getElementById('clearanceDetails');
+        const bypassArea = document.getElementById('bypassArea');
+        const submitBtn = document.getElementById('btnSubmitGenerate');
+
+        badge.className = 'badge bg-warning';
+        badge.innerText = 'Evaluating Ledger...';
+        details.innerHTML = 'Verifying fee invoices and library borrowings...';
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/certificates/clearance/${studentId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const json = await res.json();
+
+            if (json.success && json.data) {
+                const c = json.data;
+                if (c.isCleared) {
+                    badge.className = 'badge bg-success';
+                    badge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Cleared';
+                    details.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-patch-check-fill me-1"></i>All institutional dues paid and zero unreturned library books.</span>';
+                    bypassArea.style.display = 'none';
+                    submitBtn.disabled = false;
+                } else {
+                    badge.className = 'badge bg-danger';
+                    badge.innerHTML = '<i class="bi bi-exclamation-octagon-fill me-1"></i>Clearance Pending';
+
+                    let breakdownHtml = `<div class="text-danger fw-bold mb-1">${escapeHtml(c.clearanceMessage)}</div>`;
+                    if (c.unpaidInvoices && c.unpaidInvoices.length > 0) {
+                        breakdownHtml += '<div class="mt-1"><strong>Unpaid Invoices:</strong><ul>' +
+                            c.unpaidInvoices.map(i => `<li>${escapeHtml(i.invoiceNumber)}: Balance PKR ${i.balanceAmount.toLocaleString()} (Due: ${new Date(i.dueDate).toLocaleDateString()})</li>`).join('') +
+                            '</ul></div>';
+                    }
+                    if (c.unreturnedBooks && c.unreturnedBooks.length > 0) {
+                        breakdownHtml += '<div class="mt-1"><strong>Unreturned Library Books:</strong><ul>' +
+                            c.unreturnedBooks.map(b => `<li>${escapeHtml(b.bookTitle)} (Issued: ${new Date(b.issueDate).toLocaleDateString()})</li>`).join('') +
+                            '</ul></div>';
+                    }
+
+                    details.innerHTML = breakdownHtml;
+
+                    // If it is TC or SLC, clearance is mandatory
+                    if (certType === 1 || certType === 4) {
+                        bypassArea.style.display = 'block';
+                        submitBtn.disabled = !document.getElementById('bypassCheck').checked;
+                    } else {
+                        bypassArea.style.display = 'none';
+                        submitBtn.disabled = false;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Clearance check error:', err);
+        }
+    }
+
+    function handleTypeChange() {
+        handleStudentSelected();
+    }
+
+    function toggleBypassReason() {
+        const isBypass = document.getElementById('bypassCheck').checked;
+        document.getElementById('bypassReasonGroup').style.display = isBypass ? 'block' : 'none';
+        document.getElementById('btnSubmitGenerate').disabled = !isBypass;
+    }
+
+    function openIssueModal() {
+        document.getElementById('issueCertForm').reset();
+        document.getElementById('clearanceBox').style.display = 'none';
+        document.getElementById('bypassArea').style.display = 'none';
+        document.getElementById('bypassReasonGroup').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('issueCertModal')).show();
+    }
+
+    async function handleGenerateCertificate(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('btnSubmitGenerate');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Issuing...';
+
+        try {
+            const studentId = document.getElementById('issueStudentSelect').value;
+            const certType = parseInt(document.getElementById('issueCertType').value, 10);
+            const conduct = document.getElementById('issueConduct').value;
+            const promotedTo = document.getElementById('issuePromotedTo').value;
+            const leavingReason = document.getElementById('issueLeavingReason').value;
+            const remarks = document.getElementById('issueRemarks').value;
+            const bypass = document.getElementById('bypassCheck').checked;
+            const bypassReason = document.getElementById('bypassReason').value;
+
+            const payload = {
+                studentId: studentId,
+                certificateType: certType,
+                conduct: conduct,
+                promotedToClass: promotedTo,
+                leavingReason: leavingReason,
+                remarks: remarks,
+                bypassClearance: bypass,
+                bypassReason: bypassReason
+            };
+
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/certificates/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.status === 201 && data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('issueCertModal')).hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Certificate Issued!',
+                    text: `Serial: ${data.data.serialNumber}`,
+                    confirmButtonText: 'View Document'
+                }).then(() => {
+                    loadCertificates();
+                    openPrintModal(data.data.id);
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Issuance Blocked',
+                    text: data.message || 'Clearance conditions not satisfied.'
+                });
+            }
+        } catch (err) {
+            console.error('Certificate generation failed:', err);
+            Swal.fire('Error', 'Failed to generate certificate.', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-patch-check-fill me-1"></i>Generate Credential';
+        }
+    }
+
+    function openPrintModal(certId) {
+        currentViewingCertId = certId;
+        const cert = certificatesData.find(c => c.id === certId);
+        if (!cert) return;
+
+        document.getElementById('pvTitle').innerText = cert.certificateTypeName;
+        document.getElementById('pvSerial').innerText = cert.serialNumber;
+        document.getElementById('pvDate').innerText = new Date(cert.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        document.getElementById('pvStudentName').innerText = cert.studentName;
+        document.getElementById('pvFatherName').innerText = cert.fatherName || 'Guardian';
+        document.getElementById('pvAdmissionNo').innerText = cert.admissionNumber;
+        document.getElementById('pvRollNo').innerText = cert.rollNumber || 'N/A';
+        document.getElementById('pvClass').innerText = `${cert.className || 'N/A'} ${cert.sectionName ? `(${cert.sectionName})` : ''}`;
+        document.getElementById('pvConduct').innerText = cert.conduct || 'Good';
+        document.getElementById('pvPromoted').innerText = cert.promotedToClass || 'Completed';
+        document.getElementById('pvReason').innerText = cert.leavingReason || 'Completed Studies';
+        document.getElementById('pvRemarks').innerText = cert.remarks || 'Has maintained good conduct throughout.';
+        document.getElementById('pvCode').innerText = cert.verificationCode;
+        document.getElementById('pvSignatory').innerText = cert.issuedByName || 'Principal';
+
+        new bootstrap.Modal(document.getElementById('printCertModal')).show();
+    }
+
+    async function downloadPdf(certId, serialNumber) {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/certificates/${certId}/pdf`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('PDF generation failed');
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${serialNumber || 'Certificate'}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (err) {
+            console.error('Download failed:', err);
+            Swal.fire('Error', 'Unable to download certificate PDF.', 'error');
+        }
+    }
+
+    function downloadCurrentPdf() {
+        if (currentViewingCertId) {
+            const cert = certificatesData.find(c => c.id === currentViewingCertId);
+            downloadPdf(currentViewingCertId, cert ? cert.serialNumber : 'Certificate');
+        }
+    }
+
+    function printCertificateView() {
+        window.print();
+    }
+
+    function promptRevoke(certId, serialNumber) {
+        Swal.fire({
+            title: `Revoke ${serialNumber}?`,
+            text: 'Provide the mandatory administrative reason for revoking this certificate:',
+            input: 'text',
+            inputPlaceholder: 'e.g. Issued in error, Admission cancelled, Fraudulent record...',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Revoke Certificate',
+            inputValidator: (val) => {
+                if (!val || !val.trim()) return 'Reason is required!';
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch(`/api/certificates/${certId}/revoke`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ reason: result.value })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire('Revoked', 'Certificate status updated to Revoked.', 'success');
+                        loadCertificates();
+                    } else {
+                        Swal.fire('Error', data.message || 'Revocation failed', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Could not complete revocation.', 'error');
+                }
+            }
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.toString().replace(/[&<>"']/g, m => map[m]);
+    }
+</script>
+}

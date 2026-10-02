@@ -1,0 +1,649 @@
+/* ==========================================================================
+   School Management System — 2026 SaaS Application CSS
+   Built with #924EC0 Brand Identity & Clean Enterprise Aesthetics
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   1. Typography & General Utilities
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-main);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+.text-main { color: var(--text-main) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-primary-brand { color: var(--primary) !important; }
+.bg-base { background-color: var(--bg-base) !important; }
+.bg-surface { background-color: var(--bg-surface) !important; }
+.bg-card { background-color: var(--bg-card) !important; }
+.bg-elevated { background-color: var(--bg-elevated) !important; }
+.border-themed { border-color: var(--border-color) !important; }
+
+/* ==========================================================================
+   2. Application Shell Layout
+   ========================================================================== */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Sidebar Styles */
+.app-sidebar {
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1030;
+  transition: width var(--transition-normal), transform var(--transition-normal);
+}
+
+.sidebar-header {
+  height: 70px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-primary);
+}
+
+.brand-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.brand-text span {
+  color: var(--primary);
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 18px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-heading {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 12px 14px 6px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-item i {
+  font-size: 1.15rem;
+  width: 22px;
+  text-align: center;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.sidebar-item:hover {
+  background-color: var(--sidebar-item-hover);
+  color: var(--primary);
+}
+
+.sidebar-item:hover i {
+  color: var(--primary);
+}
+
+.sidebar-item.active {
+  background: var(--sidebar-item-active);
+  color: var(--primary);
+  font-weight: 600;
+  border-left: 3px solid var(--primary);
+}
+
+.sidebar-item.active i {
+  color: var(--primary);
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Main Content Area */
+.app-main {
+  flex: 1;
+  margin-left: 260px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left var(--transition-normal);
+}
+
+/* Topbar Header */
+.app-topbar {
+  height: 70px;
+  background-color: var(--topbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--topbar-border);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.org-context-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--primary-subtle);
+  border: 1px solid rgba(146, 78, 192, 0.2);
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.page-body {
+  flex: 1;
+  padding: 28px;
+}
+
+/* ==========================================================================
+   3. Modern Cards & Containers
+   ========================================================================== */
+.saas-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.saas-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(146, 78, 192, 0.25);
+}
+
+.saas-card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.saas-card-body {
+  padding: 24px;
+}
+
+.saas-card-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-elevated);
+}
+
+/* KPI Stat Cards */
+.kpi-stat-card {
+  padding: 22px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.kpi-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.kpi-icon-purple {
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.kpi-icon-teal {
+  background-color: var(--secondary-subtle);
+  color: var(--secondary);
+}
+
+.kpi-icon-amber {
+  background-color: var(--warning-bg);
+  color: var(--warning);
+}
+
+.kpi-icon-blue {
+  background-color: var(--info-bg);
+  color: var(--info);
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-trend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.trend-up {
+  background-color: var(--success-bg);
+  color: var(--success);
+}
+
+.trend-down {
+  background-color: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ==========================================================================
+   4. Buttons & Interactive Controls
+   ========================================================================== */
+.btn-saas-primary {
+  background: var(--primary-gradient);
+  border: none;
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(146, 78, 192, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-saas-primary:hover {
+  background: var(--primary-hover);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(146, 78, 192, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-saas-primary:active {
+  background: var(--primary-active);
+  transform: translateY(0);
+}
+
+.btn-saas-secondary {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-saas-secondary:hover {
+  background-color: var(--primary-subtle);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-saas-danger {
+  background-color: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.btn-saas-danger:hover {
+  background-color: var(--danger);
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   5. Form Inputs & Validation
+   ========================================================================== */
+.form-saas {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-label-saas {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-control-saas,
+.form-select-saas {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  width: 100%;
+}
+
+.form-control-saas:focus,
+.form-select-saas:focus {
+  outline: none;
+  border-color: var(--border-color-focus);
+  box-shadow: 0 0 0 3px var(--primary-focus);
+  background-color: var(--bg-input);
+  color: var(--text-main);
+}
+
+.form-control-saas::placeholder {
+  color: var(--text-muted);
+}
+
+.required-asterisk {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   6. Data Tables & Lists
+   ========================================================================== */
+.table-saas-container {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+}
+
+.table-saas {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.table-saas th {
+  background-color: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.table-saas td {
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.table-saas tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-saas tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.table-saas tbody tr:hover {
+  background-color: var(--sidebar-item-hover);
+}
+
+/* Badges */
+.badge-saas {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-active, .badge-success {
+  background-color: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success);
+}
+
+.badge-inactive, .badge-danger {
+  background-color: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+}
+
+.badge-primary {
+  background-color: var(--primary-subtle);
+  border: 1px solid rgba(146, 78, 192, 0.25);
+  color: var(--primary);
+}
+
+.badge-info {
+  background-color: var(--info-bg);
+  border: 1px solid var(--info-border);
+  color: var(--info);
+}
+
+/* ==========================================================================
+   7. Modals & Overlay Drawers
+   ========================================================================== */
+.modal-content-saas {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-main);
+}
+
+.modal-header-saas {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-footer-saas {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-elevated);
+}
+
+/* ==========================================================================
+   8. Toasts & Alerts
+   ========================================================================== */
+#toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1090;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.saas-toast {
+  min-width: 320px;
+  max-width: 420px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: slideInRight 0.3s ease forwards;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ==========================================================================
+   9. Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 991.98px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .app-sidebar.show {
+    transform: translateX(0);
+  }
+
+  .app-main {
+    margin-left: 0;
+  }
+
+  .page-body {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .app-topbar {
+    padding: 0 16px;
+  }
+
+  .page-body {
+    padding: 14px;
+  }
+  
+  .kpi-value {
+    font-size: 1.6rem;
+  }
+}

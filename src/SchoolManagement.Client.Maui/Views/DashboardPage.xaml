@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SchoolManagement.Client.Maui.ViewModels"
+             xmlns:models="clr-namespace:SchoolManagement.Application.Common.Models;assembly=SchoolManagement.Application"
+             x:Class="SchoolManagement.Client.Maui.Views.DashboardPage"
+             x:DataType="vm:DashboardViewModel"
+             BackgroundColor="{StaticResource DarkBase}"
+             Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto,*" Padding="24" RowSpacing="20">
+        <!-- Top App Bar -->
+        <Border Grid.Row="0"
+                BackgroundColor="{StaticResource DarkCard}"
+                Stroke="{StaticResource DarkBorder}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                Padding="20,14">
+            
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="16" VerticalOptions="Center">
+                <Image Grid.Column="0"
+                       Source="logo_symbol.png"
+                       HeightRequest="36"
+                       WidthRequest="36"
+                       Aspect="AspectFit"
+                       VerticalOptions="Center" />
+
+                <!-- Organization & Active Campus -->
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <HorizontalStackLayout Spacing="8">
+                        <Label Text="{Binding OrganizationName}"
+                               TextColor="{StaticResource White}"
+                               FontSize="18"
+                               FontAttributes="Bold" />
+                        <!-- Campus Pill -->
+                        <Border BackgroundColor="{StaticResource DarkElevated}"
+                                Stroke="{StaticResource DarkBorder}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 6"
+                                Padding="8,2"
+                                VerticalOptions="Center">
+                            <Label Text="{Binding ActiveBranchName, StringFormat='Campus: {0}'}"
+                                   TextColor="{StaticResource PrimaryLight}"
+                                   FontSize="11"
+                                   FontAttributes="Bold" />
+                        </Border>
+                    </HorizontalStackLayout>
+                    <Label Text="School Operations Portal"
+                           TextColor="{StaticResource Gray400}"
+                           FontSize="12" />
+                </VerticalStackLayout>
+
+                <!-- Switch Campus Button -->
+                <Button Grid.Column="2"
+                        Text="Switch Campus &#x25BE;"
+                        Command="{Binding ToggleBranchSwitcherCommand}"
+                        BackgroundColor="{StaticResource DarkElevated}"
+                        TextColor="{StaticResource White}"
+                        FontSize="11"
+                        HeightRequest="32"
+                        Padding="12,0"
+                        CornerRadius="6"
+                        VerticalOptions="Center" />
+
+                <!-- Sync Indicator Pill -->
+                <Border Grid.Column="3"
+                        BackgroundColor="{StaticResource DarkElevated}"
+                        Stroke="{StaticResource PrimaryDark}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 20"
+                        Padding="14,6"
+                        VerticalOptions="Center">
+                    <HorizontalStackLayout Spacing="8">
+                        <Label Text="&#x21BB;" TextColor="{StaticResource PrimaryLight}" FontSize="13" VerticalOptions="Center" />
+                        <Label Text="{Binding SyncStatusMessage}"
+                               TextColor="{StaticResource Gray300}"
+                               FontSize="12"
+                               VerticalOptions="Center" />
+                        <Button Text="Sync"
+                                Command="{Binding TriggerSyncCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="{StaticResource White}"
+                                FontSize="11"
+                                HeightRequest="26"
+                                Padding="10,0"
+                                CornerRadius="13" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- User Profile & Logout -->
+                <HorizontalStackLayout Grid.Column="4" Spacing="12" VerticalOptions="Center">
+                    <VerticalStackLayout Spacing="1" HorizontalOptions="End">
+                        <Label Text="{Binding UserName}" TextColor="{StaticResource White}" FontSize="13" FontAttributes="Bold" />
+                        <Label Text="{Binding UserRole}" TextColor="{StaticResource PrimaryLight}" FontSize="11" HorizontalOptions="End" />
+                    </VerticalStackLayout>
+
+                    <Button Text="Sign Out"
+                            Command="{Binding LogoutCommand}"
+                            BackgroundColor="#2D1518"
+                            TextColor="{StaticResource Danger}"
+                            BorderColor="{StaticResource Danger}"
+                            BorderWidth="1"
+                            FontSize="12"
+                            HeightRequest="34"
+                            Padding="12,0"
+                            CornerRadius="6" />
+                </HorizontalStackLayout>
+            </Grid>
+        </Border>
+
+        <!-- Main Body -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="20">
+                <!-- Campus Switcher Modal Card -->
+                <Border IsVisible="{Binding ShowBranchSwitcher}"
+                        BackgroundColor="{StaticResource DarkElevated}"
+                        Stroke="{StaticResource Primary}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="18">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Select Active Campus / Branch"
+                                   TextColor="{StaticResource White}"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="Close &#x2715;"
+                                    Command="{Binding ToggleBranchSwitcherCommand}"
+                                    BackgroundColor="Transparent"
+                                    TextColor="{StaticResource Gray400}"
+                                    FontSize="12"
+                                    HeightRequest="28" />
+                        </Grid>
+
+                        <CollectionView ItemsSource="{Binding AvailableBranches}">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:BranchDto">
+                                    <Border BackgroundColor="{StaticResource DarkCard}"
+                                            Stroke="{StaticResource DarkBorder}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="14,10">
+                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12" VerticalOptions="Center">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                <Label Text="{Binding Name}" TextColor="{StaticResource White}" FontSize="13" FontAttributes="Bold" />
+                                                <Label Text="{Binding Code, StringFormat='Code: {0}'}" TextColor="{StaticResource Gray400}" FontSize="11" />
+                                            </VerticalStackLayout>
+
+                                            <!-- Main Badge -->
+                                            <Border Grid.Column="1"
+                                                    IsVisible="{Binding IsMainBranch}"
+                                                    BackgroundColor="#1E1B4B"
+                                                    Stroke="{StaticResource Primary}"
+                                                    StrokeThickness="1"
+                                                    StrokeShape="RoundRectangle 4"
+                                                    Padding="8,2"
+                                                    VerticalOptions="Center">
+                                                <Label Text="Main Campus" TextColor="{StaticResource PrimaryLight}" FontSize="10" />
+                                            </Border>
+
+                                            <!-- Switch Button -->
+                                            <Button Grid.Column="2"
+                                                    Text="Switch"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=SwitchBranchCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="{StaticResource Primary}"
+                                                    TextColor="{StaticResource White}"
+                                                    FontSize="11"
+                                                    HeightRequest="30"
+                                                    Padding="12,0"
+                                                    CornerRadius="6" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Welcome Banner & Quick Admin Actions -->
+                <Border BackgroundColor="{StaticResource DarkCard}"
+                        Stroke="{StaticResource DarkBorder}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="24">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" VerticalOptions="Center">
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="System Overview" TextColor="{StaticResource White}" FontSize="20" FontAttributes="Bold" />
+                            <Label Text="Offline resilience enabled. All local operations automatically synchronize with the central database when connected."
+                                   TextColor="{StaticResource Gray400}" FontSize="13" />
+                        </VerticalStackLayout>
+
+                        <!-- Admin Actions -->
+                        <HorizontalStackLayout Grid.Column="1" Spacing="10" VerticalOptions="Center">
+                            <!-- SuperAdmin Organizations -->
+                            <Button Text="Platform Organizations"
+                                    IsVisible="{Binding IsSuperAdmin}"
+                                    Command="{Binding NavigateToOrganizationsCommand}"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="{StaticResource White}"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    HeightRequest="38"
+                                    Padding="16,0"
+                                    CornerRadius="6" />
+
+                            <!-- OrgAdmin School Profile & Branding -->
+                            <Button Text="School Profile &amp; Branding"
+                                    IsVisible="{Binding IsOrgAdmin}"
+                                    Command="{Binding NavigateToSchoolProfileCommand}"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="{StaticResource White}"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    HeightRequest="38"
+                                    Padding="16,0"
+                                    CornerRadius="6" />
+                        </HorizontalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Dynamic KPI Stats Grid -->
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
+                    <!-- Stat Card 1: Campuses -->
+                    <Border Grid.Column="0" BackgroundColor="{StaticResource DarkCard}" Stroke="{StaticResource DarkBorder}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="18">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="CAMPUSES / BRANCHES" TextColor="{StaticResource Gray400}" FontSize="11" FontAttributes="Bold" />
+                            <Label Text="{Binding TotalBranches}" TextColor="{StaticResource White}" FontSize="24" FontAttributes="Bold" />
+                            <Label Text="Active facilities" TextColor="{StaticResource PrimaryLight}" FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Stat Card 2: Faculty & Staff -->
+                    <Border Grid.Column="1" BackgroundColor="{StaticResource DarkCard}" Stroke="{StaticResource DarkBorder}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="18">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="FACULTY &amp; STAFF" TextColor="{StaticResource Gray400}" FontSize="11" FontAttributes="Bold" />
+                            <Label Text="{Binding TotalStaff}" TextColor="{StaticResource White}" FontSize="24" FontAttributes="Bold" />
+                            <Label Text="Teachers &amp; Administrative" TextColor="{StaticResource Info}" FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Stat Card 3: Enrolled Students -->
+                    <Border Grid.Column="2" BackgroundColor="{StaticResource DarkCard}" Stroke="{StaticResource DarkBorder}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="18">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="ENROLLED STUDENTS" TextColor="{StaticResource Gray400}" FontSize="11" FontAttributes="Bold" />
+                            <Label Text="{Binding TotalStudents}" TextColor="{StaticResource White}" FontSize="24" FontAttributes="Bold" />
+                            <Label Text="Active student enrollment" TextColor="{StaticResource Success}" FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Stat Card 4: Offline Queue -->
+                    <Border Grid.Column="3" BackgroundColor="{StaticResource DarkCard}" Stroke="{StaticResource DarkBorder}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="18">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="OFFLINE SYNC QUEUE" TextColor="{StaticResource Gray400}" FontSize="11" FontAttributes="Bold" />
+                            <Label Text="{Binding PendingSyncCount}" TextColor="{StaticResource White}" FontSize="24" FontAttributes="Bold" />
+                            <Label Text="{Binding SyncStatusMessage}" TextColor="{StaticResource Warning}" FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Core Modules Navigation -->
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="School Management Modules" TextColor="{StaticResource White}" FontSize="16" FontAttributes="Bold" />
+                    
+                    <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="14">
+                        <Button Grid.Row="0" Grid.Column="0" Text="Student Management" Command="{Binding NavigateToStudentsCommand}" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+                        <Button Grid.Row="0" Grid.Column="1" Text="Staff &amp; Teachers" Command="{Binding NavigateToStaffCommand}" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+                        <Button Grid.Row="0" Grid.Column="2" Text="Fee &amp; Invoicing" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+                        <Button Grid.Row="0" Grid.Column="3" Text="Examination &amp; Results" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+
+                        <Button Grid.Row="1" Grid.Column="0" Text="Attendance Tracking" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+                        <Button Grid.Row="1" Grid.Column="1" Text="Class Timetable" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+                        <Button Grid.Row="1" Grid.Column="2" Text="Communication &amp; Alerts" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+                        <Button Grid.Row="1" Grid.Column="3" Text="Executive Reports" BackgroundColor="{StaticResource DarkElevated}" TextColor="{StaticResource White}" BorderColor="{StaticResource DarkBorder}" BorderWidth="1" HeightRequest="60" CornerRadius="8" />
+                    </Grid>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+
+</ContentPage>

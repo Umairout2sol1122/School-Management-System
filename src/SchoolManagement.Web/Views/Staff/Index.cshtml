@@ -1,0 +1,512 @@
+@{
+    ViewData["Title"] = "Faculty & Staff Management";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="fw-bold mb-0">Faculty & Staff Directory</h3>
+            <span class="badge badge-saas-primary">Human Resources</span>
+        </div>
+        <p class="text-secondary small mb-0 mt-1">Manage institutional educators, administrative personnel, departmental assignments, and credentials.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-saas-outline" onclick="loadStaff(1)">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+        <button class="btn btn-saas-primary" onclick="openOnboardModal()" data-roles="OrganizationAdmin,Principal,SuperAdmin">
+            <i class="bi bi-person-plus-fill me-1"></i> Onboard New Staff
+        </button>
+    </div>
+</div>
+
+<!-- Search & Filtering Bar -->
+<div class="card p-3 mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-md-4 col-lg-4">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0 text-secondary">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control border-start-0" id="txtStaffSearch" placeholder="Search by name, employee code, or email..." oninput="debounceStaffSearch()">
+            </div>
+        </div>
+        <div class="col-md-3 col-lg-3">
+            <select class="form-select" id="selDepartmentFilter" onchange="loadStaff(1)">
+                <option value="">All Departments</option>
+                <option value="Academic">Academic</option>
+                <option value="Sciences">Sciences</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Languages">Languages</option>
+                <option value="Administration">Administration</option>
+                <option value="IT & Computing">IT & Computing</option>
+                <option value="Physical Education">Physical Education</option>
+            </select>
+        </div>
+        <div class="col-md-3 col-lg-3">
+            <select class="form-select" id="selStaffStatusFilter" onchange="loadStaff(1)">
+                <option value="">All Employment Statuses</option>
+                <option value="1">Active</option>
+                <option value="2">On Leave</option>
+                <option value="3">Resigned</option>
+                <option value="4">Terminated</option>
+            </select>
+        </div>
+        <div class="col-md-2 col-lg-2 text-md-end">
+            <span class="badge badge-saas-primary fs-6 px-3 py-2" id="badgeStaffCount">0 Staff</span>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Data Table -->
+<div class="card overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0" id="tblStaff">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Employee Code</th>
+                    <th>Staff Member</th>
+                    <th>Designation</th>
+                    <th>Department</th>
+                    <th>Employment Type</th>
+                    <th>Joining Date</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="staffTableBody">
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="text-secondary small mt-2">Loading faculty & staff directory...</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center py-3 px-4">
+        <div class="small text-secondary" id="staffPageSummary">
+            Showing 0 to 0 of 0 staff
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-saas-outline" id="btnStaffPrev" onclick="changeStaffPage(-1)" disabled>
+                <i class="bi bi-chevron-left me-1"></i> Previous
+            </button>
+            <span class="btn btn-sm btn-saas-primary disabled" id="lblStaffCurrentPage">Page 1</span>
+            <button class="btn btn-sm btn-saas-outline" id="btnStaffNext" onclick="changeStaffPage(1)" disabled>
+                Next <i class="bi bi-chevron-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Onboard New Staff Modal -->
+<div class="modal fade" id="modalOnboardStaff" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-person-badge-fill text-primary me-2"></i> Onboard New Faculty / Staff Member
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formOnboardStaff" onsubmit="handleOnboardStaff(event)">
+                <div class="modal-body p-4">
+                    <h6 class="fw-bold text-primary mb-3">1. Personal & Contact Information</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label required">First Name</label>
+                            <input type="text" class="form-control" id="stfFirst" required placeholder="e.g. Ayesha">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Last Name</label>
+                            <input type="text" class="form-control" id="stfLast" required placeholder="e.g. Khan">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Official Email / Username</label>
+                            <input type="email" class="form-control" id="stfEmail" required placeholder="ayesha.khan@school.edu.pk">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="stfPhone" placeholder="+92 300 5551234">
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-primary mb-3">2. Institutional Placement & Role</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label required">Designation / Title</label>
+                            <input type="text" class="form-control" id="stfDesignation" required placeholder="e.g. Senior Teacher - Physics">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Department</label>
+                            <select class="form-select" id="stfDepartment" required>
+                                <option value="">Select Department...</option>
+                                <option value="Academic">Academic</option>
+                                <option value="Sciences">Sciences</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Languages">Languages</option>
+                                <option value="Administration">Administration</option>
+                                <option value="IT & Computing">IT & Computing</option>
+                                <option value="Physical Education">Physical Education</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Employee Code</label>
+                            <input type="text" class="form-control text-uppercase" id="stfEmpCode" placeholder="Auto-generated if empty">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Employment Type</label>
+                            <select class="form-select" id="stfEmpType">
+                                <option value="1">Full-Time</option>
+                                <option value="2">Part-Time</option>
+                                <option value="3">Contract</option>
+                                <option value="4">Visiting</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Joining Date</label>
+                            <input type="date" class="form-control" id="stfJoiningDate">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Highest Qualification</label>
+                            <input type="text" class="form-control" id="stfQualification" placeholder="e.g. M.Phil in Applied Physics">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Specialization</label>
+                            <input type="text" class="form-control" id="stfSpecialization" placeholder="e.g. Nuclear & Quantum Mechanics">
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-primary mb-3">3. System Credentials</h6>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Initial Password for Portal Access</label>
+                            <input type="text" class="form-control" id="stfPassword" value="Staff@2026!Pak">
+                            <div class="form-text small">Default is <code>Staff@2026!Pak</code>. Staff will be prompted to change upon first login.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitStaff">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="staffSpinner"></span>
+                        <i class="bi bi-check-circle me-1" id="staffIcon"></i> Complete Onboarding
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Dossier Modal -->
+<div class="modal fade" id="modalStaffDetails" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-person-lines-fill text-primary me-2"></i> Staff Member Dossier
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="staffDetailsBody">
+                <!-- Dynamically loaded -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let onboardModal = null;
+    let staffDetailsModal = null;
+    let staffSearchTimeout = null;
+    let currentStaffPage = 1;
+    let totalStaffPages = 1;
+    const staffPageSize = 15;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!App.isAuthenticated()) {
+            window.location.href = "/login";
+            return;
+        }
+        if (!App.hasRole('OrganizationAdmin', 'Principal', 'SuperAdmin')) {
+            App.showToast('error', 'Access Denied', 'Staff & Faculty Management is restricted to Institution Administrators.');
+            setTimeout(() => { window.location.href = "/"; }, 800);
+            return;
+        }
+        onboardModal = new bootstrap.Modal(document.getElementById("modalOnboardStaff"));
+        staffDetailsModal = new bootstrap.Modal(document.getElementById("modalStaffDetails"));
+        loadStaff(1);
+    });
+
+    function debounceStaffSearch() {
+        clearTimeout(staffSearchTimeout);
+        staffSearchTimeout = setTimeout(() => loadStaff(1), 300);
+    }
+
+    async function loadStaff(page) {
+        currentStaffPage = page;
+        const tbody = document.getElementById("staffTableBody");
+        const search = document.getElementById("txtStaffSearch").value.trim();
+        const dept = document.getElementById("selDepartmentFilter").value;
+        const status = document.getElementById("selStaffStatusFilter").value;
+
+        let url = `/api/staff?pageNumber=${currentStaffPage}&pageSize=${staffPageSize}&`;
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (dept) url += `department=${encodeURIComponent(dept)}&`;
+        if (status) url += `status=${encodeURIComponent(status)}&`;
+
+        const res = await apiFetch(url);
+        if (res.ok && res.data && res.data.success) {
+            const data = res.data.data;
+            totalStaffPages = data.totalPages || 1;
+            document.getElementById("badgeStaffCount").textContent = `${data.totalCount} Staff`;
+            renderStaffTable(data);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-1"></i> ${res.data?.message || 'Failed to load staff records'}</td></tr>`;
+        }
+    }
+
+    function renderStaffTable(data) {
+        const tbody = document.getElementById("staffTableBody");
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-secondary"><i class="bi bi-inbox fs-1 d-block mb-2"></i> No faculty or staff records found.</td></tr>`;
+            updateStaffPagination(0, 0, 0);
+            return;
+        }
+
+        const statusMap = {
+            1: { text: "Active", cls: "badge-saas-success" },
+            2: { text: "On Leave", cls: "bg-warning text-dark" },
+            3: { text: "Resigned", cls: "bg-secondary text-white" },
+            4: { text: "Terminated", cls: "bg-danger text-white" }
+        };
+
+        const empTypeMap = {
+            1: "Full-Time",
+            2: "Part-Time",
+            3: "Contract",
+            4: "Visiting"
+        };
+
+        tbody.innerHTML = items.map(s => {
+            const st = statusMap[s.status] || { text: "Active", cls: "badge-saas-success" };
+            return `
+                <tr>
+                    <td class="ps-4">
+                        <span class="badge badge-saas-primary font-monospace">${s.employeeCode}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                 style="width: 34px; height: 34px; background: var(--saas-primary); font-size: 0.85rem;">
+                                ${(s.fullName || 'T').substring(0, 1).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-body">${s.fullName}</div>
+                                <div class="small text-secondary"><i class="bi bi-envelope me-1"></i>${s.email || '-'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="fw-semibold">${s.designation}</span></td>
+                    <td><span class="badge bg-light text-dark border">${s.department}</span></td>
+                    <td><span class="badge bg-light text-dark border">${empTypeMap[s.employmentType] || 'Standard'}</span></td>
+                    <td><div class="small text-secondary">${new Date(s.joiningDate).toLocaleDateString()}</div></td>
+                    <td><span class="badge ${st.cls}">${st.text}</span></td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-saas-outline me-1" onclick="viewStaffDetails('${s.id}')" title="View Dossier">
+                            <i class="bi bi-eye text-primary"></i>
+                        </button>
+                        <button class="btn btn-sm btn-saas-outline me-1" onclick="toggleStaffStatus('${s.id}', '${s.fullName}', ${s.status})" title="Toggle Leave Status">
+                            <i class="bi ${s.status === 1 ? 'bi-calendar2-minus text-warning' : 'bi-check2-circle text-success'}"></i>
+                        </button>
+                        <button class="btn btn-sm btn-saas-outline text-danger" onclick="deleteStaff('${s.id}', '${s.fullName}')" title="Remove Staff">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        updateStaffPagination(data.pageNumber, data.pageSize, data.totalCount);
+    }
+
+    function updateStaffPagination(page, size, total) {
+        const start = total === 0 ? 0 : (page - 1) * size + 1;
+        const end = Math.min(page * size, total);
+        document.getElementById("staffPageSummary").textContent = `Showing ${start} to ${end} of ${total} staff`;
+        document.getElementById("lblStaffCurrentPage").textContent = `Page ${page} of ${totalStaffPages || 1}`;
+        document.getElementById("btnStaffPrev").disabled = page <= 1;
+        document.getElementById("btnStaffNext").disabled = page >= totalStaffPages;
+    }
+
+    function changeStaffPage(delta) {
+        const newPage = currentStaffPage + delta;
+        if (newPage >= 1 && newPage <= totalStaffPages) {
+            loadStaff(newPage);
+        }
+    }
+
+    function openOnboardModal() {
+        document.getElementById("formOnboardStaff").reset();
+        document.getElementById("stfPassword").value = "Staff@2026!Pak";
+        document.getElementById("stfJoiningDate").valueAsDate = new Date();
+        onboardModal.show();
+    }
+
+    async function handleOnboardStaff(e) {
+        e.preventDefault();
+        const btn = document.getElementById("btnSubmitStaff");
+        const spin = document.getElementById("staffSpinner");
+        const icon = document.getElementById("staffIcon");
+
+        btn.disabled = true;
+        spin.classList.remove("d-none");
+        icon.classList.add("d-none");
+
+        const body = {
+            firstName: document.getElementById("stfFirst").value.trim(),
+            lastName: document.getElementById("stfLast").value.trim(),
+            email: document.getElementById("stfEmail").value.trim(),
+            phoneNumber: document.getElementById("stfPhone").value.trim() || null,
+            designation: document.getElementById("stfDesignation").value.trim(),
+            department: document.getElementById("stfDepartment").value,
+            employeeCode: document.getElementById("stfEmpCode").value.trim() || null,
+            employmentType: parseInt(document.getElementById("stfEmpType").value),
+            joiningDate: document.getElementById("stfJoiningDate").value || null,
+            qualification: document.getElementById("stfQualification").value.trim() || null,
+            specialization: document.getElementById("stfSpecialization").value.trim() || null,
+            initialPassword: document.getElementById("stfPassword").value
+        };
+
+        const res = await apiFetch("/api/staff", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        btn.disabled = false;
+        spin.classList.add("d-none");
+        icon.classList.remove("d-none");
+
+        if (res.ok && res.data && res.data.success) {
+            showToast("Faculty member onboarded successfully!", "success");
+            onboardModal.hide();
+            loadStaff(1);
+        } else {
+            showToast("Onboarding failed: " + (res.data?.message || "Check fields"), "danger");
+        }
+    }
+
+    async function viewStaffDetails(id) {
+        const bodyEl = document.getElementById("staffDetailsBody");
+        bodyEl.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>`;
+        staffDetailsModal.show();
+
+        const res = await apiFetch(`/api/staff/${id}`);
+        if (res.ok && res.data && res.data.success) {
+            const s = res.data.data;
+            bodyEl.innerHTML = `
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4" style="background: rgba(146, 78, 192, 0.06); border-left: 4px solid var(--saas-primary);">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                         style="width: 54px; height: 54px; background: var(--saas-primary); font-size: 1.5rem;">
+                        ${(s.fullName || 'T').substring(0, 1).toUpperCase()}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">${s.fullName}</h4>
+                        <div class="small text-secondary">
+                            <span class="badge badge-saas-primary me-2">${s.employeeCode}</span>
+                            ${s.designation} &bull; ${s.department}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Email Address</div>
+                        <div class="fw-semibold">${s.email}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Contact Phone</div>
+                        <div class="fw-semibold">${s.phoneNumber || 'Not provided'}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Qualification</div>
+                        <div class="fw-semibold">${s.qualification || 'N/A'}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Specialization</div>
+                        <div class="fw-semibold">${s.specialization || 'N/A'}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Date of Joining</div>
+                        <div class="fw-semibold">${new Date(s.joiningDate).toLocaleDateString()}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Assigned Security Roles</div>
+                        <div>${s.roles && s.roles.length > 0 ? s.roles.map(r => `<span class="badge badge-saas-primary me-1">${r}</span>`).join('') : '<span class="text-secondary small">Staff</span>'}</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            bodyEl.innerHTML = `<div class="text-danger py-4 text-center">Failed to load staff details.</div>`;
+        }
+    }
+
+    async function toggleStaffStatus(id, name, currentStatus) {
+        const newStatus = currentStatus === 1 ? 2 : 1; // 1 = Active, 2 = OnLeave
+        const statusText = newStatus === 2 ? "place On Leave" : "mark as Active";
+
+        const result = await Swal.fire({
+            title: `Update Employment Status?`,
+            text: `Do you want to ${statusText} for "${name}"?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "var(--saas-primary)",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: `Yes, ${statusText}`
+        });
+
+        if (result.isConfirmed) {
+            const res = await apiFetch(`/api/staff/${id}/toggle-status?newStatus=${newStatus}`, { method: "PATCH" });
+            if (res.ok && res.data && res.data.success) {
+                showToast(`Staff status updated successfully!`, "success");
+                loadStaff(currentStaffPage);
+            } else {
+                showToast("Failed to update status: " + (res.data?.message || "Error"), "danger");
+            }
+        }
+    }
+
+    async function deleteStaff(id, name) {
+        const result = await Swal.fire({
+            title: "Delete Staff Record?",
+            text: `Are you sure you want to deactivate and remove "${name}"? This action will disable portal access and soft-delete the profile.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Yes, delete staff"
+        });
+
+        if (result.isConfirmed) {
+            const res = await apiFetch(`/api/staff/${id}`, { method: "DELETE" });
+            if (res.ok && res.data && res.data.success) {
+                showToast(`Staff member "${name}" removed successfully!`, "success");
+                loadStaff(currentStaffPage);
+            } else {
+                showToast("Failed to remove: " + (res.data?.message || "Error"), "danger");
+            }
+        }
+    }
+</script>
+}

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SchoolManagement.Client.Maui.ViewModels"
+             xmlns:models="clr-namespace:SchoolManagement.Application.Common.Models;assembly=SchoolManagement.Application"
+             x:Class="SchoolManagement.Client.Maui.Views.OrganizationsPage"
+             x:DataType="vm:OrganizationsViewModel"
+             BackgroundColor="#121214"
+             Title="Organizations &amp; Schools">
+
+    <Grid RowDefinitions="Auto, Auto, *">
+        <!-- Top Action Bar -->
+        <Border Grid.Row="0" BackgroundColor="#1A1A1E" StrokeShape="RoundRectangle 0" StrokeThickness="0" Padding="20,16">
+            <Grid ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="16">
+                <VerticalStackLayout Grid.Column="0">
+                    <Label Text="School Organizations" FontSize="20" FontAttributes="Bold" TextColor="#FFFFFF" />
+                    <Label Text="SuperAdmin Multi-Tenant Control" FontSize="12" TextColor="#A0A0B0" />
+                </VerticalStackLayout>
+
+                <Border Grid.Column="1" BackgroundColor="#24242A" StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="12,0" HeightRequest="40" VerticalOptions="Center">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Entry Grid.Column="0"
+                               Placeholder="Search by name, code, or email..."
+                               PlaceholderColor="#666680"
+                               TextColor="#FFFFFF"
+                               Text="{Binding SearchText}"
+                               VerticalOptions="Center" />
+                        <Button Grid.Column="1"
+                                Text="Search"
+                                BackgroundColor="Transparent"
+                                TextColor="#6C5CE7"
+                                Command="{Binding LoadOrganizationsCommand}"
+                                HeightRequest="36" />
+                    </Grid>
+                </Border>
+
+                <Button Grid.Column="2"
+                        Text="Refresh"
+                        BackgroundColor="#24242A"
+                        TextColor="#E0E0F0"
+                        CornerRadius="8"
+                        Command="{Binding LoadOrganizationsCommand}"
+                        HeightRequest="40"
+                        Padding="16,0" />
+
+                <Button Grid.Column="3"
+                        Text="+ Register New School"
+                        BackgroundColor="#6C5CE7"
+                        TextColor="#FFFFFF"
+                        FontAttributes="Bold"
+                        CornerRadius="8"
+                        Command="{Binding OpenCreateModalCommand}"
+                        HeightRequest="40"
+                        Padding="18,0" />
+            </Grid>
+        </Border>
+
+        <!-- Status Message Banner -->
+        <Border Grid.Row="1"
+                IsVisible="{Binding StatusMessage, Converter={StaticResource StringNotEmptyConverter}}"
+                BackgroundColor="#1E1E26"
+                StrokeShape="RoundRectangle 6"
+                StrokeThickness="0"
+                Margin="20,8,20,0"
+                Padding="16,10">
+            <Label Text="{Binding StatusMessage}" TextColor="#A0A0D0" FontSize="13" />
+        </Border>
+
+        <!-- Organizations Grid / List -->
+        <ScrollView Grid.Row="2" Padding="20,16">
+            <VerticalStackLayout Spacing="16">
+                <!-- Activity indicator -->
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#6C5CE7" HeightRequest="32" WidthRequest="32" HorizontalOptions="Center" />
+
+                <CollectionView ItemsSource="{Binding Organizations}" SelectionMode="Single" SelectedItem="{Binding SelectedOrganization}">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="16" VerticalItemSpacing="16" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout Padding="40" HorizontalOptions="Center" Spacing="12">
+                            <Label Text="No organizations registered yet." TextColor="#A0A0B0" FontSize="16" HorizontalOptions="Center" />
+                            <Label Text="Click '+ Register New School' above to set up the first organization." TextColor="#707080" FontSize="13" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:OrganizationSummaryDto">
+                            <Border BackgroundColor="#1A1A1E" StrokeShape="RoundRectangle 12" StrokeThickness="0" Padding="20">
+                                <Grid RowDefinitions="Auto, Auto, Auto, Auto" RowSpacing="12">
+                                    <!-- Header -->
+                                    <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto">
+                                        <Border Grid.Column="0"
+                                                BackgroundColor="{Binding ThemePrimaryColor}"
+                                                StrokeShape="RoundRectangle 8"
+                                                StrokeThickness="0"
+                                                WidthRequest="44"
+                                                HeightRequest="44"
+                                                Margin="0,0,12,0">
+                                            <Label Text="{Binding Code}" TextColor="#FFFFFF" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" />
+                                        </Border>
+
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                            <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" TextColor="#FFFFFF" LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding Code}" FontSize="12" TextColor="#A0A0B0" />
+                                        </VerticalStackLayout>
+
+                                        <Border Grid.Column="2"
+                                                BackgroundColor="{Binding IsActive, Converter={StaticResource ActiveStatusColorConverter}}"
+                                                StrokeShape="RoundRectangle 12"
+                                                StrokeThickness="0"
+                                                Padding="10,4">
+                                            <Label Text="{Binding IsActive, Converter={StaticResource ActiveStatusTextConverter}}"
+                                                   TextColor="#FFFFFF"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold" />
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Contact details -->
+                                    <VerticalStackLayout Grid.Row="1" Spacing="4">
+                                        <Label Text="{Binding Email}" FontSize="13" TextColor="#C0C0D0" />
+                                        <Label Text="{Binding Phone}" FontSize="13" TextColor="#808090" />
+                                    </VerticalStackLayout>
+
+                                    <!-- Metrics Badges -->
+                                    <Grid Grid.Row="2" ColumnDefinitions="*, *" ColumnSpacing="8">
+                                        <Border Grid.Column="0" BackgroundColor="#24242A" StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="12,8">
+                                            <VerticalStackLayout>
+                                                <Label Text="{Binding BranchesCount}" FontSize="18" FontAttributes="Bold" TextColor="#6C5CE7" />
+                                                <Label Text="Campus Branches" FontSize="11" TextColor="#A0A0B0" />
+                                            </VerticalStackLayout>
+                                        </Border>
+
+                                        <Border Grid.Column="1" BackgroundColor="#24242A" StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="12,8">
+                                            <VerticalStackLayout>
+                                                <Label Text="{Binding UsersCount}" FontSize="18" FontAttributes="Bold" TextColor="#00B894" />
+                                                <Label Text="Total Users" FontSize="11" TextColor="#A0A0B0" />
+                                            </VerticalStackLayout>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Actions -->
+                                    <Grid Grid.Row="3" ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                                        <Label Grid.Column="0" Text="{Binding CreatedAtUtc, StringFormat='Created: {0:MMM dd, yyyy}'}" FontSize="11" TextColor="#606070" VerticalOptions="Center" />
+                                        <Button Grid.Column="1"
+                                                Text="{Binding IsActive, Converter={StaticResource StatusToggleTextConverter}}"
+                                                BackgroundColor="#24242A"
+                                                TextColor="#E0E0F0"
+                                                FontSize="12"
+                                                HeightRequest="32"
+                                                Padding="12,0"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:OrganizationsViewModel}}, Path=ToggleStatusCommand}"
+                                                CommandParameter="{Binding .}" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Registration Modal (Overlay) -->
+        <Border Grid.RowSpan="3"
+                IsVisible="{Binding IsCreateModalVisible}"
+                BackgroundColor="#C0000000"
+                StrokeShape="RoundRectangle 0"
+                StrokeThickness="0">
+            <Border BackgroundColor="#1A1A1E"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="1"
+                    Stroke="#2E2E38"
+                    WidthRequest="600"
+                    VerticalOptions="Center"
+                    HorizontalOptions="Center"
+                    Padding="28">
+                <VerticalStackLayout Spacing="16">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Grid.Column="0" Text="Register New Organization / School" FontSize="18" FontAttributes="Bold" TextColor="#FFFFFF" />
+                        <Button Grid.Column="1" Text="X" BackgroundColor="Transparent" TextColor="#A0A0B0" Command="{Binding CloseCreateModalCommand}" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="School Name *" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewOrgName}" Placeholder="e.g. Beacon High School" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="School Code *" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewOrgCode}" Placeholder="e.g. BHS-01" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Official Email" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewOrgEmail}" Placeholder="info@school.edu" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Phone Number" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewOrgPhone}" Placeholder="+92-300-1234567" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Campus Address" FontSize="12" TextColor="#A0A0B0" />
+                        <Entry Text="{Binding NewOrgAddress}" Placeholder="123 Education Boulevard" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                    </VerticalStackLayout>
+
+                    <BoxView HeightRequest="1" Color="#2A2A35" Margin="0,8" />
+
+                    <Label Text="Initial School Administrator Account" FontSize="14" FontAttributes="Bold" TextColor="#6C5CE7" />
+
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Admin First Name" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewAdminFirstName}" Placeholder="First Name" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Admin Last Name" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewAdminLastName}" Placeholder="Last Name" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Admin Email *" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewAdminEmail}" Placeholder="admin@school.edu" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Admin Password *" FontSize="12" TextColor="#A0A0B0" />
+                            <Entry Text="{Binding NewAdminPassword}" IsPassword="True" BackgroundColor="#24242A" TextColor="#FFFFFF" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, Auto, Auto" ColumnSpacing="12" Margin="0,12,0,0">
+                        <Label Grid.Column="0" Text="{Binding StatusMessage}" FontSize="12" TextColor="#E17055" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Cancel" BackgroundColor="#24242A" TextColor="#A0A0B0" Command="{Binding CloseCreateModalCommand}" Padding="20,0" />
+                        <Button Grid.Column="2" Text="Register Organization" BackgroundColor="#6C5CE7" TextColor="#FFFFFF" FontAttributes="Bold" Command="{Binding CreateOrganizationCommand}" Padding="20,0" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </Border>
+    </Grid>
+</ContentPage>

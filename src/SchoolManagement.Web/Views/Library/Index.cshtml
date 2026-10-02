@@ -1,0 +1,800 @@
+@{
+    ViewData["Title"] = "Library Management System";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="fw-bold mb-0" id="pageTitle">Library &amp; Book Lending</h3>
+            <span class="badge badge-saas-primary" id="pageBadge">Circulation &amp; Catalog</span>
+        </div>
+        <p class="text-secondary small mb-0 mt-1" id="pageSubtitle">Manage book catalogs, track student &amp; staff checkouts, automate overdue fines, and monitor inventory.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-saas-outline" onclick="loadLibrarySummary(); loadBooks(1);">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+        <button class="btn btn-saas-outline" onclick="openIssueBookModal()" data-roles="SuperAdmin,OrganizationAdmin,Principal,Librarian">
+            <i class="bi bi-box-arrow-up-right me-1 text-primary"></i> Issue Book
+        </button>
+        <button class="btn btn-saas-primary" onclick="openAddBookModal()" data-roles="SuperAdmin,OrganizationAdmin,Principal,Librarian">
+            <i class="bi bi-plus-circle me-1"></i> Add New Book
+        </button>
+    </div>
+</div>
+
+<!-- Library KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Total Books &amp; Copies</span>
+                    <h4 class="fw-bold my-1 text-body" id="kpiTotalCopies">0</h4>
+                    <span class="small text-muted" id="kpiTotalTitles">0 Titles</span>
+                </div>
+                <div class="rounded-circle p-2 bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-book-half fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Currently Issued</span>
+                    <h4 class="fw-bold my-1 text-warning" id="kpiIssuedCount">0</h4>
+                    <span class="small text-muted">Checked out to students/staff</span>
+                </div>
+                <div class="rounded-circle p-2 bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-journal-arrow-up fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Available in Racks</span>
+                    <h4 class="fw-bold my-1 text-success" id="kpiAvailableCopies">0</h4>
+                    <span class="small text-success">Ready for issue</span>
+                </div>
+                <div class="rounded-circle p-2 bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check2-circle fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-danger">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Overdue Returns</span>
+                    <h4 class="fw-bold my-1 text-danger" id="kpiOverdueCount">0</h4>
+                    <span class="small text-danger" id="kpiTotalFines">Rs. 0 Fines</span>
+                </div>
+                <div class="rounded-circle p-2 bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs: Catalog vs Active Issues -->
+<ul class="nav nav-pills mb-4 gap-2" id="libTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active rounded-pill px-4" id="tab-catalog" data-bs-toggle="pill" data-bs-target="#pane-catalog" type="button" role="tab">
+            <i class="bi bi-collection me-1"></i> Book Catalog
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4" id="tab-issues" data-bs-toggle="pill" data-bs-target="#pane-issues" type="button" role="tab" onclick="loadIssues()">
+            <i class="bi bi-arrow-left-right me-1"></i> Active Checkouts &amp; History
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="libTabsContent">
+    <!-- PANE 1: BOOK CATALOG -->
+    <div class="tab-pane fade show active" id="pane-catalog" role="tabpanel">
+        <div class="card p-3 mb-4 shadow-sm">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="txtBookSearch" placeholder="Search by book title, author, ISBN..." oninput="debounceBookSearch()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="selBookCategory" onchange="loadBooks(1)">
+                        <option value="">All Categories</option>
+                        <option value="Science">Science &amp; Technology</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Literature">English Literature</option>
+                        <option value="Urdu">Urdu Literature</option>
+                        <option value="Islamic">Islamic Studies</option>
+                        <option value="History">History &amp; Pakistan Studies</option>
+                        <option value="Computer">Computer Science &amp; IT</option>
+                        <option value="General">General Knowledge &amp; Reference</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check pt-2">
+                        <input class="form-check-input" type="checkbox" id="chkAvailableOnly" onchange="loadBooks(1)">
+                        <label class="form-check-label small" for="chkAvailableOnly">Available Only</label>
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <span class="badge badge-saas-primary fs-6 px-3 py-2" id="badgeBookCount">0 Books</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="tblBooks">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Title &amp; Author</th>
+                            <th>ISBN / Barcode</th>
+                            <th>Category</th>
+                            <th>Publisher</th>
+                            <th>Rack #</th>
+                            <th>Total</th>
+                            <th>Available</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTableBody">
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <div class="spinner-border text-primary"></div>
+                                <div class="text-secondary small mt-2">Loading library catalog...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center py-3 px-4">
+                <div class="small text-secondary" id="bookPageSummary">Showing 0 books</div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-saas-outline" id="btnPrevBookPage" onclick="changeBookPage(-1)" disabled>
+                        <i class="bi bi-chevron-left me-1"></i> Previous
+                    </button>
+                    <span class="btn btn-sm btn-saas-primary disabled" id="lblCurrentBookPage">Page 1</span>
+                    <button class="btn btn-sm btn-saas-outline" id="btnNextBookPage" onclick="changeBookPage(1)" disabled>
+                        Next <i class="bi bi-chevron-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANE 2: ACTIVE CHECKOUTS & HISTORY -->
+    <div class="tab-pane fade" id="pane-issues" role="tabpanel">
+        <div class="card p-3 mb-4 shadow-sm">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <select class="form-select" id="selIssueFilter" onchange="loadIssues()">
+                        <option value="">All Checkouts (Active &amp; Returned)</option>
+                        <option value="1">Currently Issued Only</option>
+                        <option value="overdue">Overdue Only</option>
+                        <option value="2">Returned Only</option>
+                    </select>
+                </div>
+                <div class="col-md-8 text-end">
+                    <button class="btn btn-saas-primary" onclick="openIssueBookModal()">
+                        <i class="bi bi-plus-circle me-1"></i> Issue Book to Borrower
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="tblIssues">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Book Title</th>
+                            <th>Borrower</th>
+                            <th>Role</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Return Date</th>
+                            <th>Fine (PKR)</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="issuesTableBody">
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-secondary">
+                                <i class="bi bi-clock-history fs-2 d-block mb-2"></i>
+                                Switch to this tab or refresh to view checkout records.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD / EDIT BOOK -->
+<div class="modal fade" id="modalBook" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="lblModalBookTitle">
+                    <i class="bi bi-book text-primary me-2"></i> Add Book to Catalog
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formBook" onsubmit="handleSaveBook(event)">
+                <input type="hidden" id="bookId">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label required">Book Title</label>
+                            <input type="text" class="form-control" id="bkTitle" required placeholder="e.g. Higher Secondary Mathematics">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Category</label>
+                            <select class="form-select" id="bkCategory" required>
+                                <option value="Science">Science &amp; Technology</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Literature">English Literature</option>
+                                <option value="Urdu">Urdu Literature</option>
+                                <option value="Islamic">Islamic Studies</option>
+                                <option value="History">History &amp; Pakistan Studies</option>
+                                <option value="Computer">Computer Science &amp; IT</option>
+                                <option value="General">General Knowledge</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Author</label>
+                            <input type="text" class="form-control" id="bkAuthor" required placeholder="e.g. Dr. A. Q. Khan">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ISBN / Barcode</label>
+                            <input type="text" class="form-control font-monospace" id="bkIsbn" placeholder="e.g. 978-0199060412">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Publisher</label>
+                            <input type="text" class="form-control" id="bkPublisher" placeholder="e.g. Oxford University Press">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Total Copies</label>
+                            <input type="number" class="form-control" id="bkCopies" required min="1" value="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Shelf / Rack #</label>
+                            <input type="text" class="form-control" id="bkRack" placeholder="e.g. Shelf B-4">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSaveBook">
+                        <i class="bi bi-check-circle me-1"></i> Save Book
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ISSUE BOOK -->
+<div class="modal fade" id="modalIssueBook" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-box-arrow-up-right text-primary me-2"></i> Issue Book to Borrower
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formIssueBook" onsubmit="handleIssueBook(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label required">Select Available Book</label>
+                        <select class="form-select" id="issBookSelect" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Borrower Type</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="borrowerType" id="typeStudent" value="student" checked onchange="toggleBorrowerType()">
+                                <label class="form-check-label" for="typeStudent">Student</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="borrowerType" id="typeStaff" value="staff" onchange="toggleBorrowerType()">
+                                <label class="form-check-label" for="typeStaff">Staff / Faculty</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="groupStudentSelect">
+                        <label class="form-label required">Select Student</label>
+                        <select class="form-select" id="issStudentSelect"></select>
+                    </div>
+                    <div class="mb-3 d-none" id="groupStaffSelect">
+                        <label class="form-label required">Select Staff Member</label>
+                        <select class="form-select" id="issStaffSelect"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Due Date (Return Deadline)</label>
+                        <input type="date" class="form-control" id="issDueDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Issue Notes / Remarks</label>
+                        <input type="text" class="form-control" id="issRemarks" placeholder="Good condition, semester checkout...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitIssue">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Issue
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: RETURN BOOK -->
+<div class="modal fade" id="modalReturnBook" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-journal-arrow-down text-success me-2"></i> Return Book &amp; Fine Calculation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formReturnBook" onsubmit="handleConfirmReturn(event)">
+                <input type="hidden" id="retIssueId">
+                <div class="modal-body p-4">
+                    <div class="p-3 rounded bg-light mb-3">
+                        <div class="fw-bold" id="retBookTitle">Book Title</div>
+                        <div class="small text-secondary" id="retBorrowerName">Borrower</div>
+                        <div class="small text-secondary" id="retDueDate">Due Date: </div>
+                    </div>
+                    <div class="alert alert-warning d-none" id="alertOverdueFine">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill fs-3 text-danger me-3"></i>
+                            <div>
+                                <strong class="text-danger">Overdue Penalty Notice</strong>
+                                <div class="small mt-1" id="lblFineCalculation">This return is overdue. Standard fine: Rs. 10 per day.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Return Notes / Condition</label>
+                        <textarea class="form-control" id="retNotes" rows="2" placeholder="Returned in good shape, pages intact..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="btnSubmitReturn">
+                        <i class="bi bi-check2-circle me-1"></i> Accept Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let modalBook = null;
+    let modalIssue = null;
+    let modalReturn = null;
+    let bookSearchTimeout = null;
+    let bkCurrentPage = 1;
+    let bkTotalPages = 1;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!App.isAuthenticated()) {
+            window.location.href = "/login";
+            return;
+        }
+
+        modalBook = new bootstrap.Modal(document.getElementById("modalBook"));
+        modalIssue = new bootstrap.Modal(document.getElementById("modalIssueBook"));
+        modalReturn = new bootstrap.Modal(document.getElementById("modalReturnBook"));
+
+        // Default issue due date: 14 days from today
+        const defaultDue = new Date();
+        defaultDue.setDate(defaultDue.getDate() + 14);
+        document.getElementById("issDueDate").value = defaultDue.toISOString().split("T")[0];
+
+        loadLibrarySummary();
+        loadBooks(1);
+    });
+
+    async function loadLibrarySummary() {
+        const res = await apiFetch("/api/library/summary");
+        if (res.ok && res.data && res.data.success) {
+            const d = res.data.data;
+            document.getElementById("kpiTotalCopies").textContent = d.totalCopies || 0;
+            document.getElementById("kpiTotalTitles").textContent = `${d.totalTitles || 0} Titles`;
+            document.getElementById("kpiIssuedCount").textContent = d.issuedCount || 0;
+            document.getElementById("kpiAvailableCopies").textContent = d.availableCopies || 0;
+            document.getElementById("kpiOverdueCount").textContent = d.overdueCount || 0;
+            document.getElementById("kpiTotalFines").textContent = "Rs. " + Number(d.totalFines || 0).toLocaleString() + " Fines";
+        }
+    }
+
+    function debounceBookSearch() {
+        clearTimeout(bookSearchTimeout);
+        bookSearchTimeout = setTimeout(() => loadBooks(1), 300);
+    }
+
+    async function loadBooks(page) {
+        bkCurrentPage = page;
+        const tbody = document.getElementById("booksTableBody");
+        const search = document.getElementById("txtBookSearch").value.trim();
+        const category = document.getElementById("selBookCategory").value;
+        const availableOnly = document.getElementById("chkAvailableOnly").checked;
+
+        let url = `/api/library/books?pageNumber=${bkCurrentPage}&pageSize=15&`;
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (category) url += `category=${encodeURIComponent(category)}&`;
+        if (availableOnly) url += `availableOnly=true&`;
+
+        const res = await apiFetch(url);
+        if (res.ok && res.data && res.data.success) {
+            const data = res.data.data;
+            bkTotalPages = data.totalPages || 1;
+            document.getElementById("badgeBookCount").textContent = `${data.totalCount} Books`;
+            renderBookTable(data);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">Failed to load catalog.</td></tr>`;
+        }
+    }
+
+    function renderBookTable(data) {
+        const tbody = document.getElementById("booksTableBody");
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-secondary"><i class="bi bi-journal-x fs-2 d-block mb-2"></i> No books found in catalog.</td></tr>`;
+            document.getElementById("bookPageSummary").textContent = "Showing 0 books";
+            return;
+        }
+
+        tbody.innerHTML = items.map(b => `
+            <tr>
+                <td class="ps-4">
+                    <div class="fw-bold text-body">${b.title}</div>
+                    <div class="small text-secondary">by ${b.author}</div>
+                </td>
+                <td><span class="small font-monospace">${b.isbn || '-'}</span></td>
+                <td><span class="badge bg-light text-dark border">${b.category}</span></td>
+                <td><span class="small text-secondary">${b.publisher || '-'}</span></td>
+                <td><span class="badge badge-saas-outline">${b.rackNumber || 'General'}</span></td>
+                <td class="fw-semibold">${b.totalCopies}</td>
+                <td class="fw-bold ${b.availableCopies > 0 ? 'text-success' : 'text-danger'}">${b.availableCopies}</td>
+                <td>
+                    <span class="badge ${b.availableCopies > 0 ? 'bg-success' : 'bg-warning text-dark'}">
+                        ${b.availableCopies > 0 ? 'Available' : 'All Checked Out'}
+                    </span>
+                </td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-saas-outline me-1" onclick="openEditBookModal('${b.id}')" title="Edit Book">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    ${b.availableCopies > 0 ? `
+                    <button class="btn btn-sm btn-saas-primary me-1" onclick="quickIssueBook('${b.id}', '${escapeJs(b.title)}')" title="Issue this book">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </button>` : ''}
+                    <button class="btn btn-sm btn-saas-outline text-danger" onclick="deleteBook('${b.id}', '${escapeJs(b.title)}')" title="Delete Book">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join("");
+
+        const start = data.totalCount === 0 ? 0 : (bkCurrentPage - 1) * data.pageSize + 1;
+        const end = Math.min(bkCurrentPage * data.pageSize, data.totalCount);
+        document.getElementById("bookPageSummary").textContent = `Showing ${start} to ${end} of ${data.totalCount} books`;
+        document.getElementById("lblCurrentBookPage").textContent = `Page ${bkCurrentPage} of ${bkTotalPages}`;
+        document.getElementById("btnPrevBookPage").disabled = bkCurrentPage <= 1;
+        document.getElementById("btnNextBookPage").disabled = bkCurrentPage >= bkTotalPages;
+    }
+
+    function changeBookPage(delta) {
+        const next = bkCurrentPage + delta;
+        if (next >= 1 && next <= bkTotalPages) loadBooks(next);
+    }
+
+    async function loadIssues() {
+        const tbody = document.getElementById("issuesTableBody");
+        const filter = document.getElementById("selIssueFilter").value;
+
+        let url = "/api/library/issues?";
+        if (filter === "1") url += "status=1&";
+        if (filter === "2") url += "status=2&";
+        if (filter === "overdue") url += "overdueOnly=true&";
+
+        const res = await apiFetch(url);
+        if (res.ok && res.data && res.data.success) {
+            const items = res.data.data || [];
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-secondary">No checkout history found.</td></tr>`;
+                return;
+            }
+
+            const now = new Date();
+            tbody.innerHTML = items.map(iss => {
+                const isOverdue = iss.status === 1 && new Date(iss.dueDate) < now;
+                return `
+                    <tr class="${isOverdue ? 'table-danger' : ''}">
+                        <td class="ps-4">
+                            <div class="fw-bold">${iss.bookTitle}</div>
+                            <div class="small text-secondary">Author: ${iss.bookAuthor}</div>
+                        </td>
+                        <td>
+                            <div class="fw-medium">${iss.studentName || iss.staffName || 'Unknown'}</div>
+                            <div class="small text-secondary">${iss.admissionNumber || iss.employeeCode || '-'}</div>
+                        </td>
+                        <td><span class="badge ${iss.studentId ? 'badge-saas-primary' : 'bg-info'}">${iss.studentId ? 'Student' : 'Staff'}</span></td>
+                        <td><span class="small">${new Date(iss.issueDate).toLocaleDateString()}</span></td>
+                        <td><span class="small ${isOverdue ? 'text-danger fw-bold' : ''}">${new Date(iss.dueDate).toLocaleDateString()}</span></td>
+                        <td><span class="small">${iss.returnDate ? new Date(iss.returnDate).toLocaleDateString() : '-'}</span></td>
+                        <td class="fw-bold ${iss.fineAmount > 0 ? 'text-danger' : ''}">Rs. ${iss.fineAmount || 0}</td>
+                        <td>
+                            <span class="badge ${isOverdue ? 'bg-danger' : (iss.status === 2 ? 'bg-success' : 'bg-warning text-dark')}">
+                                ${isOverdue ? 'OVERDUE' : (iss.status === 2 ? 'Returned' : 'Issued')}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            ${iss.status === 1 ? `
+                            <button class="btn btn-sm btn-success" onclick="openReturnModal('${iss.id}', '${escapeJs(iss.bookTitle)}', '${escapeJs(iss.studentName || iss.staffName || 'Borrower')}', '${iss.dueDate}')">
+                                <i class="bi bi-box-arrow-in-down-left me-1"></i> Return
+                            </button>` : '<span class="text-muted small"><i class="bi bi-check-all text-success"></i> Completed</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        } else {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">Failed to load checkout history.</td></tr>`;
+        }
+    }
+
+    function openAddBookModal() {
+        document.getElementById("formBook").reset();
+        document.getElementById("bookId").value = "";
+        document.getElementById("lblModalBookTitle").innerHTML = `<i class="bi bi-book text-primary me-2"></i> Add Book to Catalog`;
+        modalBook.show();
+    }
+
+    async function openEditBookModal(id) {
+        const res = await apiFetch(`/api/library/books/${id}`);
+        if (res.ok && res.data && res.data.success) {
+            const b = res.data.data;
+            document.getElementById("bookId").value = b.id;
+            document.getElementById("bkTitle").value = b.title;
+            document.getElementById("bkCategory").value = b.category;
+            document.getElementById("bkAuthor").value = b.author;
+            document.getElementById("bkIsbn").value = b.isbn || "";
+            document.getElementById("bkPublisher").value = b.publisher || "";
+            document.getElementById("bkCopies").value = b.totalCopies;
+            document.getElementById("bkRack").value = b.rackNumber || "";
+            document.getElementById("lblModalBookTitle").innerHTML = `<i class="bi bi-pencil text-primary me-2"></i> Edit Book Details`;
+            modalBook.show();
+        }
+    }
+
+    async function handleSaveBook(e) {
+        e.preventDefault();
+        const id = document.getElementById("bookId").value;
+        const body = {
+            title: document.getElementById("bkTitle").value.trim(),
+            author: document.getElementById("bkAuthor").value.trim(),
+            category: document.getElementById("bkCategory").value,
+            isbn: document.getElementById("bkIsbn").value.trim() || null,
+            publisher: document.getElementById("bkPublisher").value.trim() || null,
+            totalCopies: parseInt(document.getElementById("bkCopies").value),
+            rackNumber: document.getElementById("bkRack").value.trim() || null,
+            isActive: true
+        };
+
+        const method = id ? "PUT" : "POST";
+        const url = id ? `/api/library/books/${id}` : "/api/library/books";
+
+        const res = await apiFetch(url, {
+            method: method,
+            body: JSON.stringify(body)
+        });
+
+        if (res.ok && res.data && res.data.success) {
+            showToast(id ? "Book updated successfully!" : "Book added to catalog!", "success");
+            modalBook.hide();
+            loadLibrarySummary();
+            loadBooks(bkCurrentPage);
+        } else {
+            showToast("Failed to save book: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    async function deleteBook(id, title) {
+        const result = await Swal.fire({
+            title: "Delete Book?",
+            text: `Are you sure you want to remove "${title}" from the catalog?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            confirmButtonText: "Yes, delete"
+        });
+
+        if (result.isConfirmed) {
+            const res = await apiFetch(`/api/library/books/${id}`, { method: "DELETE" });
+            if (res.ok && res.data && res.data.success) {
+                showToast("Book deleted successfully.", "success");
+                loadLibrarySummary();
+                loadBooks(bkCurrentPage);
+            } else {
+                showToast("Cannot delete: " + (res.data?.message || "Error"), "danger");
+            }
+        }
+    }
+
+    function toggleBorrowerType() {
+        const isStudent = document.getElementById("typeStudent").checked;
+        document.getElementById("groupStudentSelect").classList.toggle("d-none", !isStudent);
+        document.getElementById("groupStaffSelect").classList.toggle("d-none", isStudent);
+    }
+
+    async function openIssueBookModal(preselectedBookId) {
+        document.getElementById("formIssueBook").reset();
+        toggleBorrowerType();
+
+        // Populate Books Select
+        const selBook = document.getElementById("issBookSelect");
+        selBook.innerHTML = `<option value="">Loading available books...</option>`;
+
+        const resBooks = await apiFetch("/api/library/books?availableOnly=true&pageSize=100");
+        if (resBooks.ok && resBooks.data && resBooks.data.success) {
+            const books = resBooks.data.data.items || [];
+            selBook.innerHTML = `<option value="">-- Select Book --</option>` +
+                books.map(b => `<option value="${b.id}" ${b.id === preselectedBookId ? 'selected' : ''}>${b.title} (Rack: ${b.rackNumber || 'N/A'}, Avail: ${b.availableCopies})</option>`).join("");
+        }
+
+        // Populate Students Select
+        const selStu = document.getElementById("issStudentSelect");
+        selStu.innerHTML = `<option value="">Loading students...</option>`;
+        const resStu = await apiFetch("/api/students?pageSize=100");
+        if (resStu.ok && resStu.data && resStu.data.success) {
+            const students = resStu.data.data.items || [];
+            selStu.innerHTML = `<option value="">-- Select Student --</option>` +
+                students.map(s => `<option value="${s.id}">${s.fullName} (${s.admissionNumber} - ${s.currentGrade})</option>`).join("");
+        }
+
+        // Populate Staff Select
+        const selStaff = document.getElementById("issStaffSelect");
+        selStaff.innerHTML = `<option value="">Loading staff...</option>`;
+        const resStaff = await apiFetch("/api/staff?pageSize=100");
+        if (resStaff.ok && resStaff.data && resStaff.data.success) {
+            const staffList = resStaff.data.data.items || [];
+            selStaff.innerHTML = `<option value="">-- Select Staff Member --</option>` +
+                staffList.map(st => `<option value="${st.id}">${st.fullName} (${st.designation} - ${st.employeeCode})</option>`).join("");
+        }
+
+        modalIssue.show();
+    }
+
+    function quickIssueBook(bookId, title) {
+        openIssueBookModal(bookId);
+    }
+
+    async function handleIssueBook(e) {
+        e.preventDefault();
+        const bookId = document.getElementById("issBookSelect").value;
+        const isStudent = document.getElementById("typeStudent").checked;
+        const studentId = isStudent ? document.getElementById("issStudentSelect").value : null;
+        const staffId = !isStudent ? document.getElementById("issStaffSelect").value : null;
+        const dueDate = document.getElementById("issDueDate").value;
+        const remarks = document.getElementById("issRemarks").value.trim() || null;
+
+        if (!bookId) {
+            showToast("Please select a book to issue.", "warning");
+            return;
+        }
+
+        if (isStudent && !studentId) {
+            showToast("Please select a student borrower.", "warning");
+            return;
+        }
+
+        if (!isStudent && !staffId) {
+            showToast("Please select a staff member borrower.", "warning");
+            return;
+        }
+
+        const body = {
+            bookId: bookId,
+            studentId: studentId || null,
+            staffProfileId: staffId || null,
+            dueDate: dueDate,
+            remarks: remarks
+        };
+
+        const res = await apiFetch("/api/library/issue", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        if (res.ok && res.data && res.data.success) {
+            showToast("Book issued successfully!", "success");
+            modalIssue.hide();
+            loadLibrarySummary();
+            loadBooks(bkCurrentPage);
+            loadIssues();
+        } else {
+            showToast("Issue failed: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    function openReturnModal(issueId, bookTitle, borrowerName, dueDateStr) {
+        document.getElementById("formReturnBook").reset();
+        document.getElementById("retIssueId").value = issueId;
+        document.getElementById("retBookTitle").textContent = bookTitle;
+        document.getElementById("retBorrowerName").textContent = "Borrower: " + borrowerName;
+        
+        const due = new Date(dueDateStr);
+        document.getElementById("retDueDate").textContent = "Due Date: " + due.toLocaleDateString();
+
+        const now = new Date();
+        const alertFine = document.getElementById("alertOverdueFine");
+        if (due < now) {
+            const diffTime = Math.abs(now - due);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const fine = diffDays * 10;
+            document.getElementById("lblFineCalculation").textContent = `Overdue by ${diffDays} day(s). System fine calculated: Rs. ${fine} (Rs. 10/day)`;
+            alertFine.classList.remove("d-none");
+        } else {
+            alertFine.classList.add("d-none");
+        }
+
+        modalReturn.show();
+    }
+
+    async function handleConfirmReturn(e) {
+        e.preventDefault();
+        const issueId = document.getElementById("retIssueId").value;
+        const notes = document.getElementById("retNotes").value.trim() || null;
+
+        const res = await apiFetch(`/api/library/return/${issueId}`, {
+            method: "POST",
+            body: JSON.stringify({ returnNotes: notes })
+        });
+
+        if (res.ok && res.data && res.data.success) {
+            const fine = res.data.data?.fineAmount || 0;
+            if (fine > 0) {
+                showToast(`Book returned! Overdue fine of Rs. ${fine} applied.`, "warning");
+            } else {
+                showToast("Book returned successfully with 0 fines.", "success");
+            }
+            modalReturn.hide();
+            loadLibrarySummary();
+            loadBooks(bkCurrentPage);
+            loadIssues();
+        } else {
+            showToast("Return failed: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    function escapeJs(str) {
+        return (str || '').replace(/'/g, "\\'");
+    }
+</script>
+}

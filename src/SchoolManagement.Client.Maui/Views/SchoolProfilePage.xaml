@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SchoolManagement.Client.Maui.ViewModels"
+             x:Class="SchoolManagement.Client.Maui.Views.SchoolProfilePage"
+             x:DataType="vm:SchoolProfileViewModel"
+             BackgroundColor="{StaticResource DarkBase}"
+             Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto,*" Padding="24" RowSpacing="20">
+        <!-- Top Navigation Bar -->
+        <Border Grid.Row="0"
+                BackgroundColor="{StaticResource DarkCard}"
+                Stroke="{StaticResource DarkBorder}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                Padding="20,14">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16" VerticalOptions="Center">
+                <Button Grid.Column="0"
+                        Text="&#x2190; Back"
+                        Command="{Binding GoBackCommand}"
+                        BackgroundColor="{StaticResource DarkElevated}"
+                        TextColor="{StaticResource White}"
+                        FontSize="12"
+                        HeightRequest="36"
+                        Padding="14,0"
+                        CornerRadius="6" />
+
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="School Profile &amp; Branding"
+                           TextColor="{StaticResource White}"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+                    <Label Text="Configure your institution's contact information, campus counts, and visual identity."
+                           TextColor="{StaticResource Gray400}"
+                           FontSize="12" />
+                </VerticalStackLayout>
+
+                <!-- Quick Stats Pill -->
+                <HorizontalStackLayout Grid.Column="2" Spacing="10" VerticalOptions="Center">
+                    <Border BackgroundColor="{StaticResource DarkElevated}"
+                            Stroke="{StaticResource DarkBorder}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12,6">
+                        <Label Text="{Binding BranchesCount, StringFormat='{0} Campuses'}"
+                               TextColor="{StaticResource PrimaryLight}"
+                               FontSize="12"
+                               FontAttributes="Bold" />
+                    </Border>
+                    <Border BackgroundColor="{StaticResource DarkElevated}"
+                            Stroke="{StaticResource DarkBorder}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12,6">
+                        <Label Text="{Binding UsersCount, StringFormat='{0} Accounts'}"
+                               TextColor="{StaticResource White}"
+                               FontSize="12"
+                               FontAttributes="Bold" />
+                    </Border>
+                </HorizontalStackLayout>
+            </Grid>
+        </Border>
+
+        <!-- Main Form Body -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="20" MaximumWidthRequest="800" HorizontalOptions="Center">
+                <!-- Status Banner -->
+                <Border IsVisible="{Binding HasStatusMessage}"
+                        BackgroundColor="{Binding IsSuccessStatus, Converter={StaticResource BoolToStatusBgConverter}}"
+                        Stroke="{Binding IsSuccessStatus, Converter={StaticResource BoolToStatusBorderConverter}}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="16,12">
+                    <Label Text="{Binding StatusMessage}"
+                           TextColor="{Binding IsSuccessStatus, Converter={StaticResource BoolToStatusTextConverter}}"
+                           FontSize="13" />
+                </Border>
+
+                <!-- Card 1: Basic Information -->
+                <Border BackgroundColor="{StaticResource DarkCard}"
+                        Stroke="{StaticResource DarkBorder}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="24">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Institutional Details"
+                               TextColor="{StaticResource White}"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="16" RowDefinitions="Auto,Auto" RowSpacing="12">
+                            <!-- School Name -->
+                            <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="6">
+                                <Label Text="School / Institution Name *" TextColor="{StaticResource Gray300}" FontSize="12" />
+                                <Entry Text="{Binding SchoolName}"
+                                       BackgroundColor="{StaticResource DarkElevated}"
+                                       TextColor="{StaticResource White}"
+                                       Placeholder="Enter school name" />
+                            </VerticalStackLayout>
+
+                            <!-- School Code (Read-Only) -->
+                            <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="6">
+                                <Label Text="Institution Code (Fixed)" TextColor="{StaticResource Gray300}" FontSize="12" />
+                                <Entry Text="{Binding SchoolCode}"
+                                       IsReadOnly="True"
+                                       BackgroundColor="#1E1E22"
+                                       TextColor="{StaticResource Gray400}" />
+                            </VerticalStackLayout>
+
+                            <!-- Email -->
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="6">
+                                <Label Text="Official Contact Email" TextColor="{StaticResource Gray300}" FontSize="12" />
+                                <Entry Text="{Binding Email}"
+                                       Keyboard="Email"
+                                       BackgroundColor="{StaticResource DarkElevated}"
+                                       TextColor="{StaticResource White}"
+                                       Placeholder="admin@school.edu" />
+                            </VerticalStackLayout>
+
+                            <!-- Phone -->
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="6">
+                                <Label Text="Contact Telephone" TextColor="{StaticResource Gray300}" FontSize="12" />
+                                <Entry Text="{Binding Phone}"
+                                       Keyboard="Telephone"
+                                       BackgroundColor="{StaticResource DarkElevated}"
+                                       TextColor="{StaticResource White}"
+                                       Placeholder="+92-XXX-XXXXXXX" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Address -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Main Campus Physical Address" TextColor="{StaticResource Gray300}" FontSize="12" />
+                            <Entry Text="{Binding Address}"
+                                   BackgroundColor="{StaticResource DarkElevated}"
+                                   TextColor="{StaticResource White}"
+                                   Placeholder="Street address, City, Country" />
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Card 2: Visual Branding & Theme -->
+                <Border BackgroundColor="{StaticResource DarkCard}"
+                        Stroke="{StaticResource DarkBorder}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="24">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Visual Branding &amp; Palette"
+                               TextColor="{StaticResource White}"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <!-- Logo URL -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Logo CDN URL (PNG or SVG recommended)" TextColor="{StaticResource Gray300}" FontSize="12" />
+                            <Entry Text="{Binding LogoUrl}"
+                                   BackgroundColor="{StaticResource DarkElevated}"
+                                   TextColor="{StaticResource White}"
+                                   Placeholder="https://example.com/logo.png" />
+                        </VerticalStackLayout>
+
+                        <!-- Color Presets -->
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Preset Accent Colors" TextColor="{StaticResource Gray300}" FontSize="12" />
+                            <HorizontalStackLayout Spacing="12">
+                                <Button Text="Pak2Source Purple"
+                                        Command="{Binding SelectColorCommand}"
+                                        CommandParameter="#6C5CE7"
+                                        BackgroundColor="#6C5CE7"
+                                        TextColor="{StaticResource White}"
+                                        FontSize="11"
+                                        CornerRadius="6" />
+                                <Button Text="Emerald Mint"
+                                        Command="{Binding SelectColorCommand}"
+                                        CommandParameter="#00B894"
+                                        BackgroundColor="#00B894"
+                                        TextColor="{StaticResource White}"
+                                        FontSize="11"
+                                        CornerRadius="6" />
+                                <Button Text="Sapphire Blue"
+                                        Command="{Binding SelectColorCommand}"
+                                        CommandParameter="#0984E3"
+                                        BackgroundColor="#0984E3"
+                                        TextColor="{StaticResource White}"
+                                        FontSize="11"
+                                        CornerRadius="6" />
+                                <Button Text="Coral Rose"
+                                        Command="{Binding SelectColorCommand}"
+                                        CommandParameter="#E84393"
+                                        BackgroundColor="#E84393"
+                                        TextColor="{StaticResource White}"
+                                        FontSize="11"
+                                        CornerRadius="6" />
+                                <Button Text="Amber Gold"
+                                        Command="{Binding SelectColorCommand}"
+                                        CommandParameter="#F39C12"
+                                        BackgroundColor="#F39C12"
+                                        TextColor="{StaticResource White}"
+                                        FontSize="11"
+                                        CornerRadius="6" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- Hex Inputs & Live Preview -->
+                        <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="16" VerticalOptions="Center">
+                            <VerticalStackLayout Grid.Column="0" Spacing="6">
+                                <Label Text="Primary Color Hex" TextColor="{StaticResource Gray300}" FontSize="12" />
+                                <Entry Text="{Binding ThemePrimaryColor}"
+                                       BackgroundColor="{StaticResource DarkElevated}"
+                                       TextColor="{StaticResource White}" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Column="1" Spacing="6">
+                                <Label Text="Secondary Color Hex" TextColor="{StaticResource Gray300}" FontSize="12" />
+                                <Entry Text="{Binding ThemeSecondaryColor}"
+                                       BackgroundColor="{StaticResource DarkElevated}"
+                                       TextColor="{StaticResource White}" />
+                            </VerticalStackLayout>
+
+                            <!-- Live Color Swatch -->
+                            <VerticalStackLayout Grid.Column="2" Spacing="6" HorizontalOptions="Center">
+                                <Label Text="Preview" TextColor="{StaticResource Gray400}" FontSize="12" HorizontalOptions="Center" />
+                                <Border BackgroundColor="{Binding ThemePrimaryColor, Converter={StaticResource HexToColorConverter}}"
+                                        Stroke="{StaticResource DarkBorder}"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        HeightRequest="40"
+                                        WidthRequest="48" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Dark Mode Toggle -->
+                        <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+                            <Switch IsToggled="{Binding ThemeDarkMode}" OnColor="{StaticResource Primary}" />
+                            <Label Text="Enable Modern Dark Theme (Default)"
+                                   TextColor="{StaticResource White}"
+                                   FontSize="13"
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Action Button -->
+                <Button Text="Save School Profile &amp; Branding"
+                        Command="{Binding SaveProfileCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="{StaticResource White}"
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        HeightRequest="48"
+                        CornerRadius="8" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

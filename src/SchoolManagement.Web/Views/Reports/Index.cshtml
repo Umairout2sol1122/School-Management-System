@@ -1,0 +1,422 @@
+@{
+    ViewData["Title"] = "Institutional Reports & Data Center";
+}
+
+<div class="row g-4">
+    <!-- Top Header Banner -->
+    <div class="col-12">
+        <div class="card p-4 border-0 shadow-sm" style="background: linear-gradient(135deg, rgba(146, 78, 192, 0.08) 0%, rgba(146, 78, 192, 0.02) 100%); border-left: 4px solid var(--saas-primary) !important;">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" 
+                         style="width: 56px; height: 56px; background: var(--saas-primary-gradient); font-size: 1.5rem;">
+                        <i class="bi bi-bar-chart-line-fill"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h3 class="fw-bold mb-0 text-body">Reports &amp; Data Center</h3>
+                            <span class="badge badge-saas-primary">Multi-Campus Scoped</span>
+                        </div>
+                        <p class="text-secondary small mb-0 mt-1">
+                            Organization-isolated analytics, student registries, faculty rosters, branch capacity, and CSV import/export.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-saas-outline" onclick="exportCurrentReport()">
+                        <i class="bi bi-download me-1"></i> Export CSV
+                    </button>
+                    <button class="btn btn-saas-primary" onclick="openImportModal()">
+                        <i class="bi bi-upload me-1"></i> Bulk Data Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="col-12">
+        <ul class="nav nav-pills custom-saas-pills gap-2 p-2 rounded-3 shadow-sm" id="reportTabs" role="tablist" style="background: var(--saas-card-bg); border: 1px solid var(--saas-border);">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-semibold" id="tab-rep-students-btn" data-bs-toggle="pill" data-bs-target="#tab-rep-students" type="button" role="tab" onclick="switchReportTab('students')">
+                    <i class="bi bi-people me-1"></i> Students Roster
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="tab-rep-staff-btn" data-bs-toggle="pill" data-bs-target="#tab-rep-staff" type="button" role="tab" onclick="switchReportTab('staff')">
+                    <i class="bi bi-person-badge me-1"></i> Staff Directory
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="tab-rep-branches-btn" data-bs-toggle="pill" data-bs-target="#tab-rep-branches" type="button" role="tab" onclick="switchReportTab('branches')">
+                    <i class="bi bi-building me-1"></i> Branch Operations
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="tab-rep-classes-btn" data-bs-toggle="pill" data-bs-target="#tab-rep-classes" type="button" role="tab" onclick="switchReportTab('classes')">
+                    <i class="bi bi-pie-chart me-1"></i> Class Capacity
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="col-12">
+        <div class="tab-content" id="reportTabContent">
+
+            <!-- 1. STUDENTS REPORT -->
+            <div class="tab-pane fade show active" id="tab-rep-students" role="tabpanel">
+                <div class="card p-0 shadow-sm border-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="fw-bold fs-6">Enrolled Students Comprehensive Registry</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="text" class="form-control form-control-sm" id="stuFilterGrade" placeholder="Filter by Grade..." onkeyup="filterStudentReport()">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Admission No</th>
+                                    <th>Roll No</th>
+                                    <th>Full Name</th>
+                                    <th>Grade</th>
+                                    <th>Section</th>
+                                    <th>Campus Branch</th>
+                                    <th>Gender</th>
+                                    <th>Status</th>
+                                    <th>Admission Date</th>
+                                    <th>Primary Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblReportStudentsBody">
+                                <tr><td colspan="10" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading student report...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. STAFF REPORT -->
+            <div class="tab-pane fade" id="tab-rep-staff" role="tabpanel">
+                <div class="card p-0 shadow-sm border-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="fw-bold fs-6">Faculty &amp; Support Staff Registry</div>
+                        <div class="text-secondary small">Academic teachers, admin staff, and campus coordinators</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Emp Code</th>
+                                    <th>Staff Name</th>
+                                    <th>Email</th>
+                                    <th>Designation</th>
+                                    <th>Department</th>
+                                    <th>Campus Branch</th>
+                                    <th>Employment</th>
+                                    <th>Status</th>
+                                    <th>Joining Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblReportStaffBody">
+                                <tr><td colspan="9" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading staff report...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. BRANCH REPORT -->
+            <div class="tab-pane fade" id="tab-rep-branches" role="tabpanel">
+                <div class="card p-0 shadow-sm border-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="fw-bold fs-6">Campus Branch Operating Metrics</div>
+                        <div class="text-secondary small">SuperAdmin-allocated branch limit utilization</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Branch Name</th>
+                                    <th>Code</th>
+                                    <th>Contact Phone</th>
+                                    <th>Type</th>
+                                    <th>Total Students</th>
+                                    <th>Total Staff</th>
+                                    <th>Operating Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblReportBranchesBody">
+                                <tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading branch report...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. CLASS CAPACITY UTILIZATION REPORT -->
+            <div class="tab-pane fade" id="tab-rep-classes" role="tabpanel">
+                <div class="card p-0 shadow-sm border-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="fw-bold fs-6">Grade / Course Capacity Utilization</div>
+                        <div class="text-secondary small">Real-time student seat allocation and capacity saturation</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Class / Program</th>
+                                    <th>Code</th>
+                                    <th>Department</th>
+                                    <th>Capacity</th>
+                                    <th>Enrolled</th>
+                                    <th>Sections</th>
+                                    <th>Capacity Saturation</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblReportClassesBody">
+                                <tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading class utilization...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- BULK IMPORT MODAL                              -->
+<!-- ============================================== -->
+<div class="modal fade" id="modalBulkImport" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-upload text-primary me-2"></i> Bulk Student Data Import</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formBulkImport" onsubmit="submitBulkImport(event)">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i> CSV header must follow: <code>AdmissionNumber,FirstName,LastName,Grade,Section</code>.
+                        All imported records are strictly associated with your organization.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Paste CSV Content</label>
+                        <textarea class="form-control font-monospace" id="txtCsvContent" rows="8" required 
+placeholder="AdmissionNumber,FirstName,LastName,Grade,Section
+ADM-2026-0001,Ali,Khan,Grade 1,Section A
+ADM-2026-0002,Fatima,Zahra,Grade 1,Section A
+ADM-2026-0003,Bilal,Ahmed,Grade 2,Section B"></textarea>
+                    </div>
+                    <div id="importFeedback" class="d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnRunImport">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="importSpinner"></span>
+                        <i class="bi bi-cloud-arrow-up me-1"></i> Start Migration Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentReportTab = 'students';
+    let cachedStudents = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!App.isAuthenticated()) {
+            window.location.href = "/login";
+            return;
+        }
+        loadAllReports();
+    });
+
+    async function loadAllReports() {
+        await Promise.all([
+            loadStudentReport(),
+            loadStaffReport(),
+            loadBranchReport(),
+            loadClassReport()
+        ]);
+    }
+
+    function switchReportTab(tab) {
+        currentReportTab = tab;
+    }
+
+    function exportCurrentReport() {
+        window.location.href = `/api/reports/export/${currentReportTab}`;
+    }
+
+    function openImportModal() {
+        new bootstrap.Modal(document.getElementById('modalBulkImport')).show();
+    }
+
+    async function loadStudentReport() {
+        const res = await App.apiFetch('/api/reports/students');
+        const tbody = document.getElementById('tblReportStudentsBody');
+        if (res.ok && res.data && res.data.success) {
+            cachedStudents = res.data.data;
+            renderStudents(cachedStudents);
+        }
+    }
+
+    function renderStudents(list) {
+        const tbody = document.getElementById('tblReportStudentsBody');
+        if (list.length > 0) {
+            tbody.innerHTML = list.map(s => `
+                <tr>
+                    <td><span class="badge badge-saas-primary font-monospace">${s.admissionNumber}</span></td>
+                    <td class="text-secondary small">${s.rollNumber || '-'}</td>
+                    <td class="fw-semibold text-body">${s.fullName}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">${s.currentGrade}</span></td>
+                    <td>${s.section || '-'}</td>
+                    <td class="small text-secondary">${s.branchName}</td>
+                    <td>${s.gender}</td>
+                    <td><span class="badge badge-saas-success">${s.status}</span></td>
+                    <td class="small">${new Date(s.admissionDate).toLocaleDateString()}</td>
+                    <td class="small">${s.primaryGuardianName ? `${s.primaryGuardianName} (${s.primaryGuardianPhone || ''})` : '-'}</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-muted">No student records found in your organization.</td></tr>';
+        }
+    }
+
+    function filterStudentReport() {
+        const query = document.getElementById('stuFilterGrade').value.trim().toLowerCase();
+        if (!query) {
+            renderStudents(cachedStudents);
+            return;
+        }
+        const filtered = cachedStudents.filter(s => 
+            (s.currentGrade && s.currentGrade.toLowerCase().includes(query)) ||
+            (s.fullName && s.fullName.toLowerCase().includes(query)) ||
+            (s.admissionNumber && s.admissionNumber.toLowerCase().includes(query))
+        );
+        renderStudents(filtered);
+    }
+
+    async function loadStaffReport() {
+        const res = await App.apiFetch('/api/reports/staff');
+        const tbody = document.getElementById('tblReportStaffBody');
+        if (res.ok && res.data && res.data.success) {
+            const list = res.data.data;
+            if (list.length > 0) {
+                tbody.innerHTML = list.map(st => `
+                    <tr>
+                        <td><span class="badge badge-saas-primary font-monospace">${st.employeeCode}</span></td>
+                        <td class="fw-semibold text-body">${st.fullName}</td>
+                        <td class="small text-secondary">${st.email}</td>
+                        <td>${st.designation}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">${st.department}</span></td>
+                        <td class="small text-secondary">${st.branchName}</td>
+                        <td>${st.employmentType}</td>
+                        <td><span class="badge badge-saas-success">${st.status}</span></td>
+                        <td class="small">${new Date(st.joiningDate).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No staff members enrolled yet.</td></tr>';
+            }
+        }
+    }
+
+    async function loadBranchReport() {
+        const res = await App.apiFetch('/api/reports/branches');
+        const tbody = document.getElementById('tblReportBranchesBody');
+        if (res.ok && res.data && res.data.success) {
+            const list = res.data.data;
+            if (list.length > 0) {
+                tbody.innerHTML = list.map(b => `
+                    <tr>
+                        <td class="fw-semibold text-body">${b.name}</td>
+                        <td><span class="badge badge-saas-primary">${b.code}</span></td>
+                        <td class="small text-secondary">${b.phone || '-'}</td>
+                        <td>${b.isMainBranch ? '<span class="badge bg-primary">Main Campus</span>' : '<span class="badge bg-secondary">Satellite Branch</span>'}</td>
+                        <td class="fw-bold">${b.totalStudents}</td>
+                        <td class="fw-bold">${b.totalStaff}</td>
+                        <td><span class="badge ${b.isActive ? 'badge-saas-success' : 'badge bg-danger'}">${b.isActive ? 'Active' : 'Deactivated'}</span></td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No campus branches recorded.</td></tr>';
+            }
+        }
+    }
+
+    async function loadClassReport() {
+        const res = await App.apiFetch('/api/reports/classes');
+        const tbody = document.getElementById('tblReportClassesBody');
+        if (res.ok && res.data && res.data.success) {
+            const list = res.data.data;
+            if (list.length > 0) {
+                tbody.innerHTML = list.map(c => `
+                    <tr>
+                        <td class="fw-semibold text-body">${c.name}</td>
+                        <td><span class="badge badge-saas-primary">${c.code}</span></td>
+                        <td>${c.departmentName || 'General'}</td>
+                        <td>${c.capacity}</td>
+                        <td class="fw-bold">${c.enrolledStudents}</td>
+                        <td>${c.sectionsCount} Sections</td>
+                        <td style="width: 200px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar ${c.utilizationPercentage >= 90 ? 'bg-danger' : c.utilizationPercentage >= 70 ? 'bg-warning' : 'bg-success'}" 
+                                         role="progressbar" style="width: ${Math.min(100, c.utilizationPercentage)}%"></div>
+                                </div>
+                                <span class="small fw-semibold">${c.utilizationPercentage}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No classes recorded.</td></tr>';
+            }
+        }
+    }
+
+    async function submitBulkImport(e) {
+        e.preventDefault();
+        const csv = document.getElementById('txtCsvContent').value.trim();
+        const btn = document.getElementById('btnRunImport');
+        const spin = document.getElementById('importSpinner');
+        const feedback = document.getElementById('importFeedback');
+
+        btn.disabled = true;
+        spin.classList.remove('d-none');
+        feedback.classList.add('d-none');
+
+        const res = await App.apiFetch('/api/reports/import/students', {
+            method: 'POST',
+            body: JSON.stringify(csv)
+        });
+
+        btn.disabled = false;
+        spin.classList.add('d-none');
+
+        if (res.ok && res.data && res.data.success) {
+            const d = res.data.data;
+            feedback.className = 'alert alert-success mt-3';
+            feedback.innerHTML = `<strong>Import Complete!</strong> Added ${d.successCount} students. (${d.failureCount} failed).`;
+            if (d.errors && d.errors.length > 0) {
+                feedback.innerHTML += `<ul class="mb-0 mt-2 small text-danger">${d.errors.map(err => `<li>${err}</li>`).join('')}</ul>`;
+            }
+            feedback.classList.remove('d-none');
+            loadStudentReport();
+            loadClassReport();
+        } else {
+            feedback.className = 'alert alert-danger mt-3';
+            feedback.textContent = res.data?.message || 'Bulk import failed.';
+            feedback.classList.remove('d-none');
+        }
+    }
+</script>
+}

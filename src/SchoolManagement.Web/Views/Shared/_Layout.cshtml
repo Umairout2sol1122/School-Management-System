@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — School Management System</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5.3.3 & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <!-- Design System Tokens & Application Styles (#924EC0) -->
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+
+    <style>
+        /* Strict Role-Based Visibility: Keep restricted items hidden until authenticated role is verified */
+        [data-roles], [data-permission] {
+            display: none !important;
+        }
+    </style>
+    <script>
+        (function () {
+            var token = localStorage.getItem('sms_auth_token') || sessionStorage.getItem('sms_auth_token');
+            var path = window.location.pathname.toLowerCase();
+            if (!token && path !== '/login') {
+                window.location.replace('/login');
+            }
+        })();
+    </script>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar" id="app-sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="brand-logo" id="main-brand-logo">
+                    <img id="sidebar-org-logo" src="" alt="Logo" class="rounded d-none" style="max-height: 38px; max-width: 48px; object-fit: contain; background: #fff; padding: 2px;" />
+                    <div class="brand-icon" id="sidebar-default-icon">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div class="brand-text" id="sidebar-brand-text">
+                        School<span>Sync</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="sidebar-menu">
+                <!-- 1. Universal Dashboard -->
+                <div class="sidebar-heading">Navigation</div>
+                <a href="/" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <!-- 2. Platform Administration (SuperAdmin Only) -->
+                <div class="sidebar-heading" data-roles="SuperAdmin">Platform Administration</div>
+                <a href="/organizations" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Organizations" ? "active" : "")" data-roles="SuperAdmin">
+                    <i class="bi bi-globe2"></i>
+                    <span>Organizations</span>
+                </a>
+
+                <!-- 3. Institutional Operations (OrgAdmin, Principal) -->
+                <div class="sidebar-heading" data-roles="OrganizationAdmin,Principal">Institutional Operations</div>
+                <a href="/branches" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Branches" ? "active" : "")" data-roles="OrganizationAdmin,Principal" data-module="Branches">
+                    <i class="bi bi-buildings"></i>
+                    <span>Branches &amp; Campuses</span>
+                </a>
+                <a href="/students" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Students" ? "active" : "")" data-roles="OrganizationAdmin,Principal" data-module="Students">
+                    <i class="bi bi-people-fill"></i>
+                    <span>Students Directory</span>
+                </a>
+                <a href="/staff" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Staff" ? "active" : "")" data-roles="OrganizationAdmin,Principal" data-module="Teachers">
+                    <i class="bi bi-person-badge-fill"></i>
+                    <span>Staff &amp; Faculty</span>
+                </a>
+                <a href="/academics" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Academics" ? "active" : "")" data-roles="OrganizationAdmin,Principal" data-module="Academics">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                    <span>Academics &amp; Classes</span>
+                </a>
+                <a href="/attendance" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Attendance" ? "active" : "")" data-roles="OrganizationAdmin,Principal" data-module="Attendance">
+                    <i class="bi bi-calendar-check-fill"></i>
+                    <span>Attendance &amp; Roll Call</span>
+                </a>
+                <a href="/fees" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Fees" ? "active" : "")" data-roles="OrganizationAdmin,Principal,Accountant" data-module="Fees">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Fees &amp; Finance</span>
+                </a>
+                <a href="/payroll" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Payroll" ? "active" : "")" data-roles="OrganizationAdmin,Principal,Accountant" data-module="Payroll">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Payroll &amp; Compensation</span>
+                </a>
+                <a href="/library" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Library" ? "active" : "")" data-roles="OrganizationAdmin,Principal,Librarian" data-module="Library">
+                    <i class="bi bi-book-half"></i>
+                    <span>Library &amp; Books</span>
+                </a>
+                <a href="/transport" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Transport" ? "active" : "")" data-roles="OrganizationAdmin,Principal,TransportManager" data-module="Transport">
+                    <i class="bi bi-bus-front"></i>
+                    <span>Transport &amp; Fleet</span>
+                </a>
+                <a href="/certificates" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Certificates" ? "active" : "")" data-roles="OrganizationAdmin,Principal,Teacher" data-module="Certificates">
+                    <i class="bi bi-patch-check-fill"></i>
+                    <span>Certificates &amp; Clearance</span>
+                </a>
+                <a href="/reports" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reports" ? "active" : "")" data-roles="OrganizationAdmin,Principal" data-module="Reports">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Reports &amp; Analytics</span>
+                </a>
+                <a href="/school-profile" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "SchoolProfile" ? "active" : "")" data-roles="OrganizationAdmin,Principal" data-module="Organizations">
+                    <i class="bi bi-buildings-fill"></i>
+                    <span>Campus Profile &amp; Settings</span>
+                </a>
+
+                <!-- 4. Academic Portal (Teacher Only) -->
+                <div class="sidebar-heading" data-roles="Teacher">Academic Portal</div>
+                <a href="/attendance" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Attendance" ? "active" : "")" data-roles="Teacher" data-module="Attendance">
+                    <i class="bi bi-calendar-check-fill"></i>
+                    <span>Mark Daily Attendance</span>
+                </a>
+                <a href="/students" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Students" ? "active" : "")" data-roles="Teacher" data-module="Students">
+                    <i class="bi bi-person-video3"></i>
+                    <span>My Classes &amp; Students</span>
+                </a>
+                <a href="/certificates" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Certificates" ? "active" : "")" data-roles="Teacher" data-module="Certificates">
+                    <i class="bi bi-patch-check-fill"></i>
+                    <span>Issue Certificates</span>
+                </a>
+
+                <!-- 5. Finance & Accounts (Accountant Only) -->
+                <div class="sidebar-heading" data-roles="Accountant">Finance &amp; Accounts</div>
+                <a href="/fees" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Fees" ? "active" : "")" data-roles="Accountant" data-module="Fees">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>Fee Invoices &amp; Challans</span>
+                </a>
+                <a href="/payroll" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Payroll" ? "active" : "")" data-roles="Accountant" data-module="Payroll">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Staff Payroll &amp; Slips</span>
+                </a>
+
+                <!-- 6. Student Portal (Student Only) -->
+                <div class="sidebar-heading" data-roles="Student">Student Portal</div>
+                <a href="/students" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Students" ? "active" : "")" data-roles="Student" data-module="Students">
+                    <i class="bi bi-mortarboard"></i>
+                    <span>My Academic Record</span>
+                </a>
+
+                <!-- 7. Parent Portal (Parent Only) -->
+                <div class="sidebar-heading" data-roles="Parent">Parent Portal</div>
+                <a href="/students" class="sidebar-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Students" ? "active" : "")" data-roles="Parent" data-module="Students">
+                    <i class="bi bi-house-heart"></i>
+                    <span>My Children's Record</span>
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center gap-2 w-100">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-bold text-truncate js-user-name fs-6">Administrator</div>
+                        <div class="text-muted small text-truncate js-user-role">OrgAdmin</div>
+                    </div>
+                    <button class="btn btn-sm btn-link text-muted p-1" onclick="App.logout()" title="Logout">
+                        <i class="bi bi-box-arrow-right fs-5"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Sidebar Mobile Overlay Backdrop -->
+        <div id="sidebar-overlay" class="modal-backdrop fade d-lg-none" style="display: none; z-index: 1025;"></div>
+
+        <!-- Main Content Area -->
+        <div class="app-main">
+            <!-- Topbar Header -->
+            <header class="app-topbar">
+                <div class="topbar-left">
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebar-toggle">
+                        <i class="bi bi-list fs-5"></i>
+                    </button>
+
+                    <!-- Active Organization Pill -->
+                    <div class="org-context-badge d-flex align-items-center gap-2">
+                        <img id="topbar-org-logo" src="" alt="Org Logo" class="rounded d-none" style="height: 22px; width: 22px; object-fit: contain; background: #fff; padding: 1px;" />
+                        <i id="topbar-org-icon" class="bi bi-building"></i>
+                        <span class="js-org-name">Master School</span>
+                        <span class="text-muted mx-1">•</span>
+                        <span class="js-branch-name text-secondary">Main Campus</span>
+                    </div>
+
+                    <!-- Role Badge -->
+                    <div id="topbar-role-badge" class="badge bg-secondary px-3 py-2 rounded-pill fw-semibold shadow-sm d-flex align-items-center gap-1 ms-2">
+                        <i class="bi bi-person"></i>
+                        <span class="js-user-role">User</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right">
+                    <!-- Dark/Light Mode Switcher -->
+                    <button type="button" class="btn btn-sm btn-saas-secondary" id="theme-toggle-btn" title="Toggle Theme">
+                        <i id="theme-icon" class="bi bi-moon-stars-fill"></i>
+                    </button>
+
+                    <!-- API Status Badge -->
+                    <a href="https://localhost:7011/scalar/v1" target="_blank" class="btn btn-sm btn-saas-secondary" title="Explore Backend API (Scalar)">
+                        <i class="bi bi-braces-asterisk text-primary-brand"></i>
+                        <span class="d-none d-sm-inline">API Docs</span>
+                    </a>
+
+                    <!-- User Account Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-saas-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                            <span class="js-user-name d-none d-md-inline">My Account</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><h6 class="dropdown-header js-user-email">user@school.edu</h6></li>
+                            <li><a class="dropdown-item" href="/school-profile"><i class="bi bi-sliders me-2"></i>School Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="App.logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Body Content -->
+            <main class="page-body">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Chart.js 4.4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Application Global JS -->
+    <script src="~/js/app.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

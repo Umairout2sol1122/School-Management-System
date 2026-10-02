@@ -1,0 +1,493 @@
+@{
+    ViewData["Title"] = "Campus & Branch Management";
+}
+
+<!-- Page Header & Action Bar -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-buildings-fill text-primary"></i>
+            <span>Campus &amp; Branch Management</span>
+        </h1>
+        <p class="text-secondary small mb-0">Manage multi-campus locations, institutional branch capacity, and campus configurations.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-saas-secondary" onclick="loadBranches()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+        <button type="button" class="btn btn-saas-primary" id="btnOpenCreateBranch" onclick="openCreateBranchModal()" data-roles="OrganizationAdmin">
+            <i class="bi bi-plus-circle me-1"></i> Add New Campus
+        </button>
+    </div>
+</div>
+
+<!-- Campus Quota & Capacity Banner -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card p-3 shadow-sm h-100 border-0" style="background: var(--saas-surface);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-secondary small fw-semibold">Active Campuses</span>
+                <span class="badge badge-saas-primary"><i class="bi bi-buildings me-1"></i> Allocated</span>
+            </div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-2 fw-bold text-body" id="lblActiveBranches">0</span>
+                <span class="text-secondary" id="lblMaxBranchesText">/ 0 Licensed</span>
+            </div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-primary" id="barBranchQuota" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card p-3 shadow-sm h-100 border-0" style="background: var(--saas-surface);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-secondary small fw-semibold">Available Quota</span>
+                <span class="badge badge-saas-success"><i class="bi bi-check-circle me-1"></i> Remaining</span>
+            </div>
+            <div class="fs-2 fw-bold text-success" id="lblRemainingBranches">0</div>
+            <p class="text-secondary small mb-0 mt-1" id="lblQuotaHelpText">You can establish new branches within your licensed quota.</p>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card p-3 shadow-sm h-100 border-0" style="background: var(--saas-surface);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-secondary small fw-semibold">Active Branch Context</span>
+                <span class="badge bg-info text-dark"><i class="bi bi-geo-alt-fill me-1"></i> Current</span>
+            </div>
+            <div class="fs-5 fw-bold text-truncate text-body js-branch-name">Main Campus</div>
+            <p class="text-secondary small mb-0 mt-1">Switching campus re-scopes reports and rosters.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Campuses List Card -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent py-3 px-4 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+            <span>Educational Campuses</span>
+        </h5>
+        <span class="badge bg-light text-dark border" id="lblBranchCountBadge">0 Branches</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle mb-0" id="tblBranches">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Campus Name</th>
+                    <th>Branch Code</th>
+                    <th>Location / Address</th>
+                    <th>Contact Details</th>
+                    <th>Campus Role</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="branchTableBody">
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="text-secondary small mt-2">Loading campus records...</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 1. Create Campus Modal -->
+<div class="modal fade" id="modalCreateBranch" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-building-add text-primary me-2"></i> Register New Campus / Branch
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formCreateBranch" onsubmit="handleCreateBranch(event)">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 px-3 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i> Branches are isolated campuses under your institution. Each branch maintains its own classrooms, students, and timetable.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label required">Campus / Branch Name</label>
+                            <input type="text" class="form-control" id="createBranchName" required placeholder="e.g. City Campus (Gulberg)">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Branch Code</label>
+                            <input type="text" class="form-control text-uppercase font-monospace" id="createBranchCode" required maxlength="10" placeholder="e.g. GLB-01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Campus Phone / Helpline</label>
+                            <input type="text" class="form-control" id="createBranchPhone" placeholder="+92 42 35712345">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Campus Official Email</label>
+                            <input type="email" class="form-control" id="createBranchEmail" placeholder="gulberg@school.edu.pk">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Physical Campus Address</label>
+                            <textarea class="form-control" id="createBranchAddress" rows="2" placeholder="Plot 14, Main Boulevard, Gulberg, Lahore"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="createBranchIsMain">
+                                <label class="form-check-label fw-semibold" for="createBranchIsMain">Designate as Institution Main Campus</label>
+                                <div class="form-text small">Making this the main campus will designate it as the institutional headquarters.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitCreateBranch">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="createBranchSpinner"></span>
+                        <i class="bi bi-check-circle me-1" id="createBranchIcon"></i> Create Campus
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Edit Campus Modal -->
+<div class="modal fade" id="modalEditBranch" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-pencil-square text-primary me-2"></i> Edit Campus / Branch
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditBranch" onsubmit="handleEditBranch(event)">
+                <input type="hidden" id="editBranchId" />
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label required">Campus Name</label>
+                            <input type="text" class="form-control" id="editBranchName" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Branch Code (Immutable)</label>
+                            <input type="text" class="form-control bg-light font-monospace" id="editBranchCode" readonly disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Campus Phone / Helpline</label>
+                            <input type="text" class="form-control" id="editBranchPhone">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Campus Email</label>
+                            <input type="email" class="form-control" id="editBranchEmail">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Physical Campus Address</label>
+                            <textarea class="form-control" id="editBranchAddress" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="editBranchIsMain">
+                                <label class="form-check-label fw-semibold" for="editBranchIsMain">Designate as Main Campus</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitEditBranch">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="editBranchSpinner"></span>
+                        <i class="bi bi-save me-1" id="editBranchIcon"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let branches = [];
+    let schoolMaxBranches = 5;
+    let createBranchModal = null;
+    let editBranchModal = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        createBranchModal = new bootstrap.Modal(document.getElementById("modalCreateBranch"));
+        editBranchModal = new bootstrap.Modal(document.getElementById("modalEditBranch"));
+        loadBranches();
+    });
+
+    async function loadBranches() {
+        const tbody = document.getElementById("branchTableBody");
+
+        // 1. Fetch organization profile to get MaxBranches capacity
+        const schoolRes = await App.apiFetch("/api/organizations/my-school");
+        if (schoolRes.ok && schoolRes.data && schoolRes.data.success) {
+            schoolMaxBranches = schoolRes.data.data.maxBranches || 5;
+        }
+
+        // 2. Fetch branches
+        const res = await App.apiFetch("/api/branches");
+        if (res.ok && res.data && res.data.success) {
+            branches = res.data.data;
+            renderBranches();
+            updateCapacity();
+        } else {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-1"></i> ${res.data?.message || 'Failed to load campuses'}</td></tr>`;
+        }
+    }
+
+    function updateCapacity() {
+        const activeCount = branches.filter(b => b.isActive).length;
+        const remaining = Math.max(0, schoolMaxBranches - activeCount);
+        const pct = Math.min(100, Math.round((activeCount / schoolMaxBranches) * 100));
+
+        document.getElementById("lblActiveBranches").textContent = activeCount;
+        document.getElementById("lblMaxBranchesText").textContent = `/ ${schoolMaxBranches} Licensed`;
+        document.getElementById("lblRemainingBranches").textContent = remaining;
+        document.getElementById("lblBranchCountBadge").textContent = `${branches.length} Campuses`;
+
+        const bar = document.getElementById("barBranchQuota");
+        bar.style.width = `${pct}%`;
+        bar.className = pct >= 100 ? "progress-bar bg-danger" : pct >= 75 ? "progress-bar bg-warning" : "progress-bar bg-primary";
+
+        const btnCreate = document.getElementById("btnOpenCreateBranch");
+        if (remaining <= 0) {
+            document.getElementById("lblQuotaHelpText").innerHTML = `<span class="text-danger fw-semibold"><i class="bi bi-exclamation-circle me-1"></i> Limit reached.</span> Contact SuperAdmin to upgrade capacity.`;
+        } else {
+            document.getElementById("lblQuotaHelpText").textContent = `${remaining} additional campus(es) can be added under your active license.`;
+        }
+    }
+
+    function renderBranches() {
+        const tbody = document.getElementById("branchTableBody");
+        if (branches.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-secondary"><i class="bi bi-buildings fs-1 d-block mb-2"></i> No campuses found for this organization.</td></tr>`;
+            return;
+        }
+
+        const currentUser = App.getCurrentUser ? App.getCurrentUser() : null;
+        const currentBranchId = currentUser?.branchId;
+
+        tbody.innerHTML = branches.map(b => {
+            const isCurrent = currentBranchId && b.id.toLowerCase() === currentBranchId.toLowerCase();
+            const mainBadge = b.isMainBranch
+                ? `<span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i> Main Campus</span>`
+                : `<span class="badge bg-light text-secondary border">Branch Campus</span>`;
+
+            const currentBadge = isCurrent
+                ? `<span class="badge bg-info-subtle text-info ms-2"><i class="bi bi-check2-circle me-1"></i> Active Session</span>`
+                : '';
+
+            return `
+            <tr class="${isCurrent ? 'table-light' : ''}">
+                <td class="ps-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 40px; height: 40px; background: ${b.isMainBranch ? 'var(--saas-primary)' : 'var(--saas-accent)'};">
+                            <i class="bi ${b.isMainBranch ? 'bi-building-fill' : 'bi-building'}"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-body">${b.name} ${currentBadge}</div>
+                            <div class="small text-secondary">${b.address || 'Location not specified'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge badge-saas-primary font-monospace">${b.code}</span>
+                </td>
+                <td>
+                    <span class="small text-body">${b.address || '-'}</span>
+                </td>
+                <td>
+                    <div class="small"><i class="bi bi-telephone me-1 text-secondary"></i> ${b.phone || '-'}</div>
+                    <div class="small text-secondary"><i class="bi bi-envelope me-1"></i> ${b.email || '-'}</div>
+                </td>
+                <td>
+                    ${mainBadge}
+                </td>
+                <td>
+                    <span class="badge ${b.isActive ? 'badge-saas-success' : 'badge bg-danger'}">
+                        ${b.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td class="text-end pe-4">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-saas-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            ${!isCurrent && b.isActive ? `<li><a class="dropdown-item fw-semibold text-primary" href="javascript:void(0)" onclick="switchBranch('${b.id}', '${encodeURIComponent(b.name)}')"><i class="bi bi-arrow-repeat me-2"></i> Switch to this Campus</a></li><li><hr class="dropdown-divider"></li>` : ''}
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="openEditBranchModal('${b.id}')"><i class="bi bi-pencil me-2 text-secondary"></i> Edit Details</a></li>
+                            <li>
+                                <a class="dropdown-item ${b.isActive ? 'text-warning' : 'text-success'}" href="javascript:void(0)" onclick="toggleBranchStatus('${b.id}', '${encodeURIComponent(b.name)}', ${b.isActive})">
+                                    <i class="bi ${b.isActive ? 'bi-pause-circle text-warning' : 'bi-play-circle text-success'} me-2"></i> ${b.isActive ? 'Deactivate Campus' : 'Activate Campus'}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join("");
+    }
+
+    function openCreateBranchModal() {
+        const activeCount = branches.filter(b => b.isActive).length;
+        if (activeCount >= schoolMaxBranches) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Branch Limit Reached',
+                text: `Your educational institution is granted a maximum of ${schoolMaxBranches} campus(es). Please contact SuperAdmin to upgrade your branch allocation plan.`,
+                confirmButtonColor: '#924EC0'
+            });
+            return;
+        }
+
+        document.getElementById("formCreateBranch").reset();
+        document.getElementById("createBranchIsMain").checked = branches.length === 0;
+        createBranchModal.show();
+    }
+
+    async function handleCreateBranch(e) {
+        e.preventDefault();
+        const btn = document.getElementById("btnSubmitCreateBranch");
+        const spin = document.getElementById("createBranchSpinner");
+        const icon = document.getElementById("createBranchIcon");
+
+        btn.disabled = true;
+        spin.classList.remove("d-none");
+        icon.classList.add("d-none");
+
+        const body = {
+            name: document.getElementById("createBranchName").value.trim(),
+            code: document.getElementById("createBranchCode").value.trim().toUpperCase(),
+            phone: document.getElementById("createBranchPhone").value.trim(),
+            email: document.getElementById("createBranchEmail").value.trim(),
+            address: document.getElementById("createBranchAddress").value.trim(),
+            isMainBranch: document.getElementById("createBranchIsMain").checked
+        };
+
+        const res = await App.apiFetch("/api/branches", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        btn.disabled = false;
+        spin.classList.add("d-none");
+        icon.classList.remove("d-none");
+
+        if (res.ok && res.data && res.data.success) {
+            App.showToast('success', 'Campus Registered!', 'New campus has been added to your institution.');
+            createBranchModal.hide();
+            loadBranches();
+        } else {
+            App.showToast('error', 'Registration Failed', res.data?.message || 'Check provided campus details.');
+        }
+    }
+
+    function openEditBranchModal(id) {
+        const branch = branches.find(b => b.id === id);
+        if (!branch) return;
+
+        document.getElementById("editBranchId").value = branch.id;
+        document.getElementById("editBranchName").value = branch.name;
+        document.getElementById("editBranchCode").value = branch.code;
+        document.getElementById("editBranchPhone").value = branch.phone || '';
+        document.getElementById("editBranchEmail").value = branch.email || '';
+        document.getElementById("editBranchAddress").value = branch.address || '';
+        document.getElementById("editBranchIsMain").checked = branch.isMainBranch;
+
+        editBranchModal.show();
+    }
+
+    async function handleEditBranch(e) {
+        e.preventDefault();
+        const id = document.getElementById("editBranchId").value;
+        const btn = document.getElementById("btnSubmitEditBranch");
+        const spin = document.getElementById("editBranchSpinner");
+        const icon = document.getElementById("editBranchIcon");
+
+        btn.disabled = true;
+        spin.classList.remove("d-none");
+        icon.classList.add("d-none");
+
+        const body = {
+            name: document.getElementById("editBranchName").value.trim(),
+            phone: document.getElementById("editBranchPhone").value.trim(),
+            email: document.getElementById("editBranchEmail").value.trim(),
+            address: document.getElementById("editBranchAddress").value.trim(),
+            isMainBranch: document.getElementById("editBranchIsMain").checked
+        };
+
+        const res = await App.apiFetch(`/api/branches/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(body)
+        });
+
+        btn.disabled = false;
+        spin.classList.add("d-none");
+        icon.classList.remove("d-none");
+
+        if (res.ok && res.data && res.data.success) {
+            App.showToast('success', 'Saved!', 'Campus details updated successfully.');
+            editBranchModal.hide();
+            loadBranches();
+        } else {
+            App.showToast('error', 'Update Failed', res.data?.message || 'Unable to update campus details.');
+        }
+    }
+
+    async function toggleBranchStatus(id, name, isActive) {
+        const actionText = isActive ? "deactivate" : "activate";
+        const result = await Swal.fire({
+            title: `${isActive ? 'Deactivate' : 'Activate'} Campus?`,
+            text: `Are you sure you want to ${actionText} '${decodeURIComponent(name)}'?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: isActive ? '#dc3545' : '#10B981',
+            confirmButtonText: `Yes, ${actionText}`
+        });
+
+        if (!result.isConfirmed) return;
+
+        const res = await App.apiFetch(`/api/branches/${id}/toggle-status`, { method: "PATCH" });
+        if (res.ok && res.data && res.data.success) {
+            App.showToast('success', 'Status Updated', `Campus '${decodeURIComponent(name)}' has been ${actionText}d.`);
+            loadBranches();
+        } else {
+            App.showToast('error', 'Action Failed', res.data?.message || 'Unable to update campus status.');
+        }
+    }
+
+    function switchBranch(id, name) {
+        const decodedName = decodeURIComponent(name);
+        try {
+            const userStr = localStorage.getItem("sms_auth_user") || sessionStorage.getItem("sms_auth_user");
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                user.branchId = id;
+                user.branchName = decodedName;
+                localStorage.setItem("sms_auth_user", JSON.stringify(user));
+                sessionStorage.setItem("sms_auth_user", JSON.stringify(user));
+                document.cookie = `sms_user_branch=${encodeURIComponent(decodedName)}; path=/; max-age=86400`;
+            }
+        } catch (e) {
+            console.error("Error updating branch in session:", e);
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Campus Switched',
+            text: `Switched active operational campus to '${decodedName}'.`,
+            timer: 1500,
+            showConfirmButton: false
+        }).then(() => {
+            window.location.reload();
+        });
+    }
+</script>
+}

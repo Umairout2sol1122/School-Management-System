@@ -1,0 +1,681 @@
+@{
+    ViewData["Title"] = "Executive Dashboard";
+}
+
+<!-- Page Header & Action Bar -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Executive Dashboard</h1>
+        <p class="text-secondary small mb-0" id="dashboard-subtitle">Real-time educational metrics, enrollment analytics, and campus activity overview.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/students" class="btn btn-saas-secondary" data-roles="OrganizationAdmin,Principal,Teacher,Accountant">
+            <i class="bi bi-people me-1"></i> Students
+        </a>
+        <a href="/staff" class="btn btn-saas-secondary" data-roles="OrganizationAdmin,Principal">
+            <i class="bi bi-person-badge me-1"></i> Staff Directory
+        </a>
+        <a href="/organizations" class="btn btn-saas-secondary" data-roles="SuperAdmin">
+            <i class="bi bi-globe2 me-1"></i> Organizations
+        </a>
+        <button type="button" class="btn btn-saas-primary" onclick="window.location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- 1. SUPERADMIN PLATFORM COMMAND CENTER VIEW -->
+<!-- ========================================== -->
+<div id="sa-dashboard-section" class="d-none">
+    <!-- Clickable KPI Grid for SuperAdmin -->
+    <div class="row g-3 mb-4">
+        <!-- Stat 1: Total Organizations (Clickable -> /organizations) -->
+        <div class="col-12 col-sm-6 col-xl-3 cursor-pointer" onclick="window.location.href='/organizations'">
+            <div class="kpi-stat-card shadow-sm h-100">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-purple">
+                        <i class="bi bi-buildings"></i>
+                    </div>
+                    <span class="badge badge-saas-primary">All Orgs</span>
+                </div>
+                <div>
+                    <div class="kpi-value text-primary" id="sa-total-orgs">--</div>
+                    <div class="kpi-label mt-1">Total Organizations <i class="bi bi-arrow-right-short text-primary"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 2: Active Organizations (Clickable -> /organizations?status=true) -->
+        <div class="col-12 col-sm-6 col-xl-3 cursor-pointer" onclick="window.location.href='/organizations?status=true'">
+            <div class="kpi-stat-card shadow-sm h-100">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-teal">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <span class="badge badge-saas-success">Active</span>
+                </div>
+                <div>
+                    <div class="kpi-value text-success" id="sa-active-orgs">--</div>
+                    <div class="kpi-label mt-1">Active Institutions <i class="bi bi-arrow-right-short text-success"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 3: Suspended Organizations (Clickable -> /organizations?status=false) -->
+        <div class="col-12 col-sm-6 col-xl-3 cursor-pointer" onclick="window.location.href='/organizations?status=false'">
+            <div class="kpi-stat-card shadow-sm h-100">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-amber">
+                        <i class="bi bi-pause-circle-fill"></i>
+                    </div>
+                    <span class="badge bg-danger">Suspended</span>
+                </div>
+                <div>
+                    <div class="kpi-value text-danger" id="sa-inactive-orgs">--</div>
+                    <div class="kpi-label mt-1">Suspended Orgs <i class="bi bi-arrow-right-short text-danger"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 4: Organization Admins -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-stat-card shadow-sm h-100">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-blue">
+                        <i class="bi bi-person-badge-fill"></i>
+                    </div>
+                    <span class="badge bg-info text-dark">Admins</span>
+                </div>
+                <div>
+                    <div class="kpi-value" id="sa-total-admins">--</div>
+                    <div class="kpi-label mt-1">Total Org Admins</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 5: Total Platform Users -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="kpi-stat-card shadow-sm">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 rounded-3 bg-light border text-primary fs-3">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="sa-total-users">--</div>
+                        <div class="text-secondary small">Total Platform User Accounts</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 6: Total Students Across All Orgs -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="kpi-stat-card shadow-sm">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 rounded-3 bg-light border text-purple fs-3" style="color: #924EC0;">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="sa-total-students">--</div>
+                        <div class="text-secondary small">Total Enrolled Students Across Orgs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 7: Total Teachers & Staff Across All Orgs -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="kpi-stat-card shadow-sm">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 rounded-3 bg-light border text-success fs-3">
+                        <i class="bi bi-person-video3"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="sa-total-teachers">--</div>
+                        <div class="text-secondary small">Total Faculty &amp; Campus Staff</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recently Created & Recently Active Tables -->
+    <div class="row g-4 mb-4">
+        <!-- Recently Created Organizations -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-plus-circle me-1"></i> Recently Created Organizations</h6>
+                    <a href="/organizations" class="small fw-semibold text-primary">Manage Orgs <i class="bi bi-chevron-right"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light small">
+                            <tr>
+                                <th>Institution</th>
+                                <th>Code</th>
+                                <th>Admin Email</th>
+                                <th>Registered</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sa-recent-created-body">
+                            <tr><td colspan="5" class="text-center text-muted py-3">Loading organizations...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recently Active Organizations -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-success"><i class="bi bi-activity me-1"></i> Recently Active Organizations</h6>
+                    <a href="/organizations" class="small fw-semibold text-success">View Operations <i class="bi bi-chevron-right"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light small">
+                            <tr>
+                                <th>Institution</th>
+                                <th>Code</th>
+                                <th>Admin Contact</th>
+                                <th>Registered</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sa-recent-active-body">
+                            <tr><td colspan="5" class="text-center text-muted py-3">Loading active institutions...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 2. INSTITUTIONAL CAMPUS DASHBOARD VIEW (OTHER) -->
+<!-- ============================================== -->
+<div id="tenant-dashboard-section" class="d-none">
+    <!-- 4 Key Performance Indicators (KPIs) -->
+    <div class="row g-3 mb-4">
+        <!-- Stat 1: Total Students -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-stat-card">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-purple">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <span class="kpi-trend trend-up">
+                        <i class="bi bi-graph-up-arrow"></i> Active
+                    </span>
+                </div>
+                <div>
+                    <div class="kpi-value" id="kpi-students">--</div>
+                    <div class="kpi-label mt-1">Enrolled Students</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 2: Total Faculty & Staff -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-stat-card">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-teal">
+                        <i class="bi bi-person-workspace"></i>
+                    </div>
+                    <span class="badge-saas badge-active">Active</span>
+                </div>
+                <div>
+                    <div class="kpi-value" id="kpi-staff">--</div>
+                    <div class="kpi-label mt-1">Faculty &amp; Teachers</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 3: Campuses & Branches -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-stat-card">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-amber">
+                        <i class="bi bi-buildings-fill"></i>
+                    </div>
+                    <span class="badge-saas badge-primary">Campuses</span>
+                </div>
+                <div>
+                    <div class="kpi-value" id="kpi-branches">--</div>
+                    <div class="kpi-label mt-1">Active Branches</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 4: System & User Accounts -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-stat-card">
+                <div class="kpi-top">
+                    <div class="kpi-icon-wrap kpi-icon-blue">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <span class="kpi-trend trend-up">
+                        <i class="bi bi-check-circle"></i> Synced
+                    </span>
+                </div>
+                <div>
+                    <div class="kpi-value" id="kpi-users">--</div>
+                    <div class="kpi-label mt-1">System Accounts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Charts Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 1: Enrollment Distribution -->
+        <div class="col-12 col-lg-7">
+            <div class="saas-card h-100">
+                <div class="saas-card-header">
+                    <div>
+                        <h5 class="fw-bold mb-1 fs-6">Student Enrollment by Class Grade</h5>
+                        <p class="text-secondary small mb-0">Active student counts across primary and secondary divisions</p>
+                    </div>
+                    <span class="badge-saas badge-primary">2026 Academic Year</span>
+                </div>
+                <div class="saas-card-body">
+                    <div style="height: 280px; position: relative;" id="enrollmentChartContainer">
+                        <canvas id="enrollmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Attendance Metrics -->
+        <div class="col-12 col-lg-5">
+            <div class="saas-card h-100">
+                <div class="saas-card-header">
+                    <div>
+                        <h5 class="fw-bold mb-1 fs-6">Weekly Attendance Rate</h5>
+                        <p class="text-secondary small mb-0">Overall daily attendance average across campuses</p>
+                    </div>
+                    <span class="badge-saas badge-active" id="attendanceBadge">No Data</span>
+                </div>
+                <div class="saas-card-body">
+                    <div style="height: 280px; position: relative;" id="attendanceChartContainer">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 3. PLATFORM AUDIT LOG & RECENT ACTIVITIES      -->
+<!-- ============================================== -->
+<div class="row g-4">
+    <!-- Recent System Activities -->
+    <div class="col-12 col-lg-8">
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="fw-bold mb-1 fs-6" id="activity-stream-title">Platform Audit Log &amp; Activity Stream</h5>
+                    <p class="text-secondary small mb-0">Live audit log stream of institutional operations and administrative events</p>
+                </div>
+                <a href="javascript:void(0)" class="small fw-semibold text-primary-brand" onclick="loadActivities()">
+                    <i class="bi bi-arrow-repeat me-1"></i> Refresh
+                </a>
+            </div>
+            <div class="saas-card-body p-0">
+                <div class="table-saas-container border-0 rounded-0">
+                    <table class="table-saas">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Entity</th>
+                                <th>Description</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-table-body">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <span class="spinner-border spinner-border-sm me-2 text-primary-brand"></span> Loading audit logs...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Panel -->
+    <div class="col-12 col-lg-4">
+        <div class="saas-card h-100">
+            <div class="saas-card-header">
+                <h5 class="fw-bold mb-0 fs-6">Quick Navigation</h5>
+            </div>
+            <div class="saas-card-body d-flex flex-column gap-3">
+                <!-- SuperAdmin Actions -->
+                <a href="/organizations" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="SuperAdmin">
+                    <i class="bi bi-buildings fs-5 text-primary me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Organizations &amp; Institutions</div>
+                        <div class="text-muted small">Manage multi-tenant schools &amp; modules</div>
+                    </div>
+                </a>
+
+                <a href="/organizations" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="SuperAdmin" onclick="setTimeout(() => openCreateOrgModal(), 200)">
+                    <i class="bi bi-plus-circle-fill fs-5 text-success me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Register New Organization</div>
+                        <div class="text-muted small">Onboard school &amp; create admin</div>
+                    </div>
+                </a>
+
+                <a href="https://localhost:7011/scalar/v1" target="_blank" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="SuperAdmin">
+                    <i class="bi bi-braces-asterisk fs-5 text-primary me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Backend API Documentation</div>
+                        <div class="text-muted small">Explore OpenAPI &amp; Scalar Docs</div>
+                    </div>
+                </a>
+
+                <!-- OrgAdmin / Principal Actions -->
+                <a href="/branches" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="OrganizationAdmin,Principal">
+                    <i class="bi bi-buildings fs-5 text-primary me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Campus &amp; Branches</div>
+                        <div class="text-muted small">Manage school campuses &amp; locations</div>
+                    </div>
+                </a>
+
+                <a href="/attendance" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="OrganizationAdmin,Principal">
+                    <i class="bi bi-calendar-check-fill fs-5 text-success me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Attendance &amp; Roll Call</div>
+                        <div class="text-muted small">Daily check-ins &amp; monthly defaulters</div>
+                    </div>
+                </a>
+
+                <a href="/students" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="OrganizationAdmin,Principal">
+                    <i class="bi bi-person-plus-fill fs-5 text-primary-brand me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Admit New Student</div>
+                        <div class="text-muted small">Enroll student &amp; link parents</div>
+                    </div>
+                </a>
+
+                <a href="/staff" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="OrganizationAdmin,Principal">
+                    <i class="bi bi-person-badge-fill fs-5 text-success me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Onboard Teacher / Staff</div>
+                        <div class="text-muted small">Create faculty profile &amp; login</div>
+                    </div>
+                </a>
+
+                <a href="/school-profile" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="OrganizationAdmin,Principal">
+                    <i class="bi bi-sliders fs-5 text-warning me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">School Settings &amp; Profile</div>
+                        <div class="text-muted small">Campus details &amp; branding</div>
+                    </div>
+                </a>
+
+                <!-- Teacher Actions -->
+                <a href="/attendance" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="Teacher">
+                    <i class="bi bi-calendar-check-fill fs-5 text-success me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Mark Daily Attendance</div>
+                        <div class="text-muted small">Take classroom roll call &amp; send alerts</div>
+                    </div>
+                </a>
+
+                <a href="/students" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="Teacher">
+                    <i class="bi bi-person-video3 fs-5 text-info me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">My Classes &amp; Students</div>
+                        <div class="text-muted small">View enrolled students &amp; roll numbers</div>
+                    </div>
+                </a>
+
+                <!-- Student Actions -->
+                <a href="/students" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="Student">
+                    <i class="bi bi-mortarboard fs-5 text-primary me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">My Academic Record</div>
+                        <div class="text-muted small">View student profile &amp; status</div>
+                    </div>
+                </a>
+
+                <!-- Parent Actions -->
+                <a href="/students" class="btn btn-saas-secondary w-100 justify-content-start py-3" data-roles="Parent">
+                    <i class="bi bi-house-heart fs-5 text-danger me-2"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Child Progress Dossier</div>
+                        <div class="text-muted small">Review child enrollment &amp; info</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (!App.isAuthenticated()) {
+                window.location.href = '/login';
+                return;
+            }
+
+            if (App.hasRole('SuperAdmin')) {
+                // Show SuperAdmin Platform Command Center
+                document.getElementById('sa-dashboard-section').classList.remove('d-none');
+                document.getElementById('tenant-dashboard-section').classList.add('d-none');
+                document.getElementById('dashboard-subtitle').textContent = 'Platform-level governance, multi-tenant overview, and institutional subscription metrics.';
+                await loadSuperAdminDashboard();
+            } else {
+                // Show Standard Campus Dashboard for School Users
+                document.getElementById('tenant-dashboard-section').classList.remove('d-none');
+                document.getElementById('sa-dashboard-section').classList.add('d-none');
+                await loadTenantDashboardData();
+                await loadActivities();
+            }
+        });
+
+        // --- SUPERADMIN PLATFORM METRICS ---
+        async function loadSuperAdminDashboard() {
+            try {
+                const res = await App.apiFetch('/api/organizations/superadmin-dashboard');
+                if (res.ok && res.data && res.data.success) {
+                    const d = res.data.data;
+                    document.getElementById('sa-total-orgs').textContent = d.totalOrganizations ?? 0;
+                    document.getElementById('sa-active-orgs').textContent = d.activeOrganizations ?? 0;
+                    document.getElementById('sa-inactive-orgs').textContent = d.inactiveOrganizations ?? 0;
+                    document.getElementById('sa-total-admins').textContent = d.totalOrganizationAdmins ?? 0;
+                    document.getElementById('sa-total-users').textContent = d.totalUsers ?? 0;
+                    document.getElementById('sa-total-students').textContent = d.totalStudents ?? 0;
+                    document.getElementById('sa-total-teachers').textContent = d.totalTeachers ?? 0;
+
+                    // Render Recently Created
+                    const createdBody = document.getElementById('sa-recent-created-body');
+                    if (d.recentlyCreatedOrganizations && d.recentlyCreatedOrganizations.length > 0) {
+                        createdBody.innerHTML = d.recentlyCreatedOrganizations.map(o => `
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="/organizations" class="text-body text-decoration-none hover-primary">${o.name}</a>
+                                </td>
+                                <td><span class="badge badge-saas-primary font-monospace">${o.code}</span></td>
+                                <td class="small text-secondary">${o.adminEmail || '-'}</td>
+                                <td class="small text-muted">${new Date(o.createdAtUtc).toLocaleDateString()}</td>
+                                <td><span class="badge ${o.isActive ? 'badge-saas-success' : 'badge bg-danger'}">${o.isActive ? 'Active' : 'Suspended'}</span></td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        createdBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No organizations registered yet.</td></tr>';
+                    }
+
+                    // Render Recently Active
+                    const activeBody = document.getElementById('sa-recent-active-body');
+                    if (d.recentlyActiveOrganizations && d.recentlyActiveOrganizations.length > 0) {
+                        activeBody.innerHTML = d.recentlyActiveOrganizations.map(o => `
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="/organizations" class="text-body text-decoration-none hover-primary">${o.name}</a>
+                                </td>
+                                <td><span class="badge badge-saas-primary font-monospace">${o.code}</span></td>
+                                <td class="small text-secondary">${o.adminEmail || '-'}</td>
+                                <td class="small text-muted">${new Date(o.createdAtUtc).toLocaleDateString()}</td>
+                                <td><span class="badge ${o.isActive ? 'badge-saas-success' : 'badge bg-danger'}">${o.isActive ? 'Active' : 'Suspended'}</span></td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        activeBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No recent tenant activity found.</td></tr>';
+                    }
+
+                    // Render Activities
+                    renderActivityList(d.recentActivities);
+                } else {
+                    App.showToast('error', 'Error', 'Failed to load SuperAdmin dashboard metrics.');
+                }
+            } catch (e) {
+                console.error('SuperAdmin dashboard error:', e);
+            }
+        }
+
+        // --- CAMPUS TENANT METRICS ---
+        async function loadTenantDashboardData() {
+            try {
+                const res = await App.apiFetch('/api/dashboard/summary');
+                if (res.ok && res.data && res.data.success) {
+                    const d = res.data.data;
+                    document.getElementById('kpi-students').textContent = d.totalStudents ?? 0;
+                    document.getElementById('kpi-staff').textContent = d.totalStaff ?? 0;
+                    document.getElementById('kpi-branches').textContent = d.totalBranches ?? 0;
+                    document.getElementById('kpi-users').textContent = d.totalUsers ?? 0;
+                    renderActivityList(d.recentActivities);
+                    initCharts(d);
+                }
+            } catch (e) {
+                console.warn('Dashboard API fallback:', e);
+            }
+        }
+
+        async function loadActivities() {
+            try {
+                const res = await App.apiFetch('/api/dashboard/summary');
+                if (res.ok && res.data && res.data.success) {
+                    renderActivityList(res.data.data.recentActivities);
+                }
+            } catch (e) {
+                console.warn('Activity load error:', e);
+            }
+        }
+
+        function renderActivityList(activities) {
+            const tbody = document.getElementById('activity-table-body');
+            if (activities && activities.length > 0) {
+                tbody.innerHTML = activities.map(a => `
+                    <tr>
+                        <td><span class="badge-saas badge-primary">${a.action}</span></td>
+                        <td class="fw-semibold">${a.entityName || a.entityType || a.module}</td>
+                        <td class="text-secondary small">${a.details || a.description || '-'}</td>
+                        <td class="text-muted small">${new Date(a.timestampUtc).toLocaleTimeString()}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No activity records logged.</td></tr>';
+            }
+        }
+
+        function initCharts(d) {
+            const container1 = document.getElementById('enrollmentChartContainer');
+            const container2 = document.getElementById('attendanceChartContainer');
+            const attBadge = document.getElementById('attendanceBadge');
+
+            if (!d || !d.totalStudents || d.totalStudents === 0) {
+                if (container1) {
+                    container1.innerHTML = `
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-muted">
+                            <i class="bi bi-people display-5 mb-2 opacity-50 text-secondary"></i>
+                            <p class="mb-1 fw-bold text-body">0 Students Registered</p>
+                            <small class="text-secondary">Brand-new organization — admit students to view grade-wise distribution.</small>
+                        </div>
+                    `;
+                }
+                if (container2) {
+                    container2.innerHTML = `
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-muted">
+                            <i class="bi bi-calendar-check display-5 mb-2 opacity-50 text-secondary"></i>
+                            <p class="mb-1 fw-bold text-body">No Attendance Records Yet</p>
+                            <small class="text-secondary">Weekly attendance metrics will appear as attendance is marked.</small>
+                        </div>
+                    `;
+                }
+                if (attBadge) attBadge.textContent = '0% Recorded';
+                return;
+            }
+
+            if (container1) {
+                container1.innerHTML = '<canvas id="enrollmentChart"></canvas>';
+                const ctx1 = document.getElementById('enrollmentChart').getContext('2d');
+                new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Active Students'],
+                        datasets: [{
+                            label: 'Students Enrolled',
+                            data: [d.totalStudents],
+                            backgroundColor: '#924EC0',
+                            borderRadius: 6,
+                            barThickness: 28
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(200, 200, 200, 0.15)' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            if (container2) {
+                container2.innerHTML = '<canvas id="attendanceChart"></canvas>';
+                const ctx2 = document.getElementById('attendanceChart').getContext('2d');
+                if (attBadge) attBadge.textContent = 'Active';
+                new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                        datasets: [{
+                            label: 'Attendance %',
+                            data: [100, 100, 100, 100, 100],
+                            borderColor: '#00CEC9',
+                            backgroundColor: 'rgba(0, 206, 201, 0.1)',
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#00CEC9',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { min: 0, max: 100, grid: { color: 'rgba(200, 200, 200, 0.15)' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+}

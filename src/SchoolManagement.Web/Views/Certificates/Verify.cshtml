@@ -1,0 +1,181 @@
+@{
+    ViewData["Title"] = "Digital Certificate Verification";
+    Layout = "_Layout";
+    var initialCode = ViewBag.InitialCode as string ?? "";
+}
+
+<div class="container py-5" style="max-width: 760px;">
+    <!-- Brand / Trust Emblem Header -->
+    <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3 shadow-sm" style="width: 72px; height: 72px;">
+            <i class="bi bi-shield-check" style="font-size: 2.2rem;"></i>
+        </div>
+        <h2 class="fw-bold">Digital Credential Verification</h2>
+        <p class="text-muted">Official public authenticity verification for academic credentials issued by affiliated institutions.</p>
+    </div>
+
+    <!-- Verification Search Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form id="verifyForm" onsubmit="handleVerify(event)">
+                <label class="form-label fw-semibold">Enter Certificate Verification Code or Serial No</label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-qr-code-scan text-muted"></i></span>
+                    <input type="text" id="verifyInput" class="form-control border-start-0" placeholder="e.g. CERT-A1B2C3D4-20261003" value="@initialCode" required>
+                    <button class="btn btn-primary px-4 fw-semibold" type="submit" id="btnVerify">
+                        <i class="bi bi-search me-1"></i>Verify
+                    </button>
+                </div>
+                <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i>Found in the bottom-left QR verification box of any official certificate.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="verifyResult" style="display: none;">
+        <!-- Filled by JS -->
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('verifyInput');
+        if (input.value && input.value.trim().length > 0) {
+            handleVerify(new Event('submit'));
+        }
+    });
+
+    async function handleVerify(e) {
+        if (e) e.preventDefault();
+        const code = document.getElementById('verifyInput').value.trim();
+        if (!code) return;
+
+        const btn = document.getElementById('btnVerify');
+        const container = document.getElementById('verifyResult');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Verifying...';
+
+        try {
+            const res = await fetch(`/api/certificates/verify/${encodeURIComponent(code)}`);
+            const data = await res.json();
+
+            container.style.display = 'block';
+
+            if (res.ok && data.success && data.data) {
+                const cert = data.data;
+                const isRevoked = cert.isRevoked || cert.status === 'Revoked';
+
+                if (!isRevoked) {
+                    container.innerHTML = `
+                        <div class="card border-success border-2 shadow-sm rounded-4 overflow-hidden">
+                            <div class="card-header bg-success text-white py-3 px-4 d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-check-circle-fill fs-4"></i>
+                                    <span class="fw-bold fs-5">AUTHENTIC &amp; VALID CREDENTIAL</span>
+                                </div>
+                                <span class="badge bg-white text-success fw-bold">Active</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="text-center pb-3 border-bottom mb-3">
+                                    <div class="text-uppercase text-muted small fw-semibold">Issued By</div>
+                                    <h4 class="fw-bold text-dark mb-0">${escapeHtml(cert.organizationName)}</h4>
+                                    <div class="text-muted small">${escapeHtml(cert.branchName || 'Main Campus')}</div>
+                                </div>
+
+                                <div class="row g-3 py-2">
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Certificate Type</div>
+                                        <div class="fw-bold text-primary fs-5">${escapeHtml(cert.certificateType)}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Official Serial Number</div>
+                                        <div class="fw-bold text-dark fs-5"><code>${escapeHtml(cert.serialNumber)}</code></div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Student Full Name</div>
+                                        <div class="fw-bold fs-5">${escapeHtml(cert.studentName)}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Father / Guardian Name</div>
+                                        <div class="fw-semibold">${escapeHtml(cert.fatherName || 'On Record')}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Admission Number</div>
+                                        <div class="fw-semibold">${escapeHtml(cert.admissionNumber)}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Class / Program</div>
+                                        <div class="fw-semibold">${escapeHtml(cert.className || 'Graduated / Completed')}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Issue Date</div>
+                                        <div class="fw-semibold">${new Date(cert.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Institutional Status</div>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Verified Genuine Record</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-top text-center text-muted small">
+                                    <i class="bi bi-fingerprint text-success me-1"></i>Cryptographic Verification Signature Matched Against Central Institutional Ledger.
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="card border-danger border-2 shadow-sm rounded-4 overflow-hidden">
+                            <div class="card-header bg-danger text-white py-3 px-4 d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-x-octagon-fill fs-4"></i>
+                                    <span class="fw-bold fs-5">REVOKED CREDENTIAL</span>
+                                </div>
+                                <span class="badge bg-white text-danger fw-bold">Revoked</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="alert alert-danger mb-3">
+                                    <strong><i class="bi bi-exclamation-triangle-fill me-1"></i>Notice of Revocation:</strong>
+                                    This certificate was officially cancelled by the issuing institution.
+                                    ${cert.revocationReason ? `<br/><em>Reason: ${escapeHtml(cert.revocationReason)}</em>` : ''}
+                                </div>
+                                <div class="row g-2 text-muted small">
+                                    <div class="col-6"><strong>Student:</strong> ${escapeHtml(cert.studentName)}</div>
+                                    <div class="col-6"><strong>Serial No:</strong> ${escapeHtml(cert.serialNumber)}</div>
+                                    <div class="col-6"><strong>Institution:</strong> ${escapeHtml(cert.organizationName)}</div>
+                                    <div class="col-6"><strong>Issued On:</strong> ${new Date(cert.issueDate).toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                container.innerHTML = `
+                    <div class="card border-warning border-1 shadow-sm rounded-4 p-4 text-center">
+                        <div class="fs-1 text-warning mb-2"><i class="bi bi-question-circle"></i></div>
+                        <h5 class="fw-bold text-dark">No Record Found</h5>
+                        <p class="text-muted mb-0">The verification code <code>${escapeHtml(code)}</code> does not match any authenticated credential in the school registry. Please verify the code and re-try.</p>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error('Verification failed:', err);
+            container.innerHTML = `
+                <div class="alert alert-danger rounded-3">
+                    <i class="bi bi-wifi-off me-2"></i>Unable to connect to verification server. Please check your connection.
+                </div>
+            `;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-search me-1"></i>Verify';
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.toString().replace(/[&<>"']/g, m => map[m]);
+    }
+</script>
+}

@@ -1,0 +1,25 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:SchoolManagement.Client.Maui"
+             xmlns:converters="clr-namespace:SchoolManagement.Client.Maui.Converters"
+             x:Class="SchoolManagement.Client.Maui.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter" />
+            <converters:ActiveStatusColorConverter x:Key="ActiveStatusColorConverter" />
+            <converters:ActiveStatusTextConverter x:Key="ActiveStatusTextConverter" />
+            <converters:StatusToggleTextConverter x:Key="StatusToggleTextConverter" />
+            <converters:PermissionVisibilityConverter x:Key="PermissionVisibilityConverter" />
+            <converters:BoolToStatusBgConverter x:Key="BoolToStatusBgConverter" />
+            <converters:BoolToStatusBorderConverter x:Key="BoolToStatusBorderConverter" />
+            <converters:BoolToStatusTextConverter x:Key="BoolToStatusTextConverter" />
+            <converters:HexToColorConverter x:Key="HexToColorConverter" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

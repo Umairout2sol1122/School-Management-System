@@ -1,0 +1,828 @@
+@{
+    ViewData["Title"] = "Transport & Fleet Management";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="fw-bold mb-0" id="pageTitle">Transport &amp; Bus Fleet Management</h3>
+            <span class="badge badge-saas-primary" id="pageBadge">Logistics &amp; Routes</span>
+        </div>
+        <p class="text-secondary small mb-0 mt-1" id="pageSubtitle">Oversee vehicle fleets, design transit routes and pickup stops, assign passenger seats, and print driver trip sheets.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-saas-outline" onclick="loadTransportSummary(); refreshActiveTab();">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </button>
+        <button class="btn btn-saas-outline" onclick="openAllocateStudentModal()" data-roles="SuperAdmin,OrganizationAdmin,Principal,TransportManager">
+            <i class="bi bi-person-plus-fill me-1 text-primary"></i> Allocate Student
+        </button>
+        <button class="btn btn-saas-primary" onclick="openAddVehicleModal()" data-roles="SuperAdmin,OrganizationAdmin,Principal,TransportManager">
+            <i class="bi bi-bus-front-fill me-1"></i> Add Vehicle
+        </button>
+    </div>
+</div>
+
+<!-- Transport KPI Dashboard Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Total Vehicles in Fleet</span>
+                    <h4 class="fw-bold my-1 text-body" id="kpiTotalVehicles">0</h4>
+                    <span class="small text-muted" id="kpiTotalCapacity">Total Capacity: 0 Seats</span>
+                </div>
+                <div class="rounded-circle p-2 bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-bus-front fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Active Transit Routes</span>
+                    <h4 class="fw-bold my-1 text-info" id="kpiActiveRoutes">0</h4>
+                    <span class="small text-muted">Daily pickup/drop lines</span>
+                </div>
+                <div class="rounded-circle p-2 bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-signpost-split fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Students Allocated</span>
+                    <h4 class="fw-bold my-1 text-success" id="kpiAllocatedStudents">0</h4>
+                    <span class="small text-success">Subscribed to bus service</span>
+                </div>
+                <div class="rounded-circle p-2 bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-people-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3 h-100 shadow-sm border-0 border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="text-secondary small fw-medium">Fleet Seat Utilization</span>
+                    <h4 class="fw-bold my-1 text-warning" id="kpiUtilizationRate">0%</h4>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-warning" role="progressbar" id="kpiUtilizationBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="rounded-circle p-2 bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-pie-chart-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs: Fleet, Routes, Allocations -->
+<ul class="nav nav-pills mb-4 gap-2" id="transportTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active rounded-pill px-4" id="tab-fleet" data-bs-toggle="pill" data-bs-target="#pane-fleet" type="button" role="tab" onclick="loadVehicles()">
+            <i class="bi bi-bus-front me-1"></i> Fleet Vehicles
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4" id="tab-routes" data-bs-toggle="pill" data-bs-target="#pane-routes" type="button" role="tab" onclick="loadRoutes()">
+            <i class="bi bi-geo-alt me-1"></i> Transit Routes
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4" id="tab-allocations" data-bs-toggle="pill" data-bs-target="#pane-allocations" type="button" role="tab" onclick="loadAllocations()">
+            <i class="bi bi-people me-1"></i> Student Allocations
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="transportTabsContent">
+    <!-- PANE 1: FLEET VEHICLES -->
+    <div class="tab-pane fade show active" id="pane-fleet" role="tabpanel">
+        <div class="card overflow-hidden shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="tblVehicles">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Reg Number</th>
+                            <th>Model / Make</th>
+                            <th>Campus / Branch</th>
+                            <th>Capacity</th>
+                            <th>Allocated</th>
+                            <th>Driver Name</th>
+                            <th>Driver Phone</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehiclesTableBody">
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <div class="spinner-border text-primary"></div>
+                                <div class="text-secondary small mt-2">Loading vehicle fleet...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANE 2: ROUTES -->
+    <div class="tab-pane fade" id="pane-routes" role="tabpanel">
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-saas-primary" onclick="openAddRouteModal()">
+                <i class="bi bi-plus-circle me-1"></i> Create Transit Route
+            </button>
+        </div>
+        <div class="card overflow-hidden shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="tblRoutes">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Route Name</th>
+                            <th>Assigned Bus</th>
+                            <th>Stops &amp; Areas</th>
+                            <th>Monthly Fare</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routesTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-secondary">Loading routes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANE 3: ALLOCATIONS -->
+    <div class="tab-pane fade" id="pane-allocations" role="tabpanel">
+        <div class="card p-3 mb-4 shadow-sm">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <select class="form-select" id="selRouteFilter" onchange="loadAllocations()">
+                        <option value="">All Transit Routes</option>
+                    </select>
+                </div>
+                <div class="col-md-7 text-end">
+                    <button class="btn btn-saas-outline me-2" onclick="printDriverManifest()">
+                        <i class="bi bi-printer me-1"></i> Print Driver Trip Manifest
+                    </button>
+                    <button class="btn btn-saas-primary" onclick="openAllocateStudentModal()">
+                        <i class="bi bi-plus-circle me-1"></i> Allocate Student
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="tblAllocations">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Student</th>
+                            <th>Class &amp; Section</th>
+                            <th>Route</th>
+                            <th>Vehicle</th>
+                            <th>Pickup Stop</th>
+                            <th>Drop-off Stop</th>
+                            <th>Monthly Fare</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allocationsTableBody">
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-secondary">Select route or load allocations...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD / EDIT VEHICLE -->
+<div class="modal fade" id="modalVehicle" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="lblModalVehicleTitle">
+                    <i class="bi bi-bus-front text-primary me-2"></i> Register New Vehicle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formVehicle" onsubmit="handleSaveVehicle(event)">
+                <input type="hidden" id="vehId">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label required">Vehicle Number / Registration</label>
+                        <input type="text" class="form-control font-monospace" id="vehNumber" required placeholder="e.g. ICT-LEA-2041">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Model / Vehicle Make</label>
+                        <input type="text" class="form-control" id="vehModel" placeholder="e.g. Toyota Coaster 2023">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Seating Capacity</label>
+                        <input type="number" class="form-control" id="vehCapacity" required min="1" value="28">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Driver Full Name</label>
+                        <input type="text" class="form-control" id="vehDriverName" required placeholder="e.g. Muhammad Aslam">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Driver Mobile Phone</label>
+                        <input type="text" class="form-control font-monospace" id="vehDriverPhone" required placeholder="e.g. +92 301 5551234">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Driver License Number</label>
+                        <input type="text" class="form-control font-monospace" id="vehDriverLicense" placeholder="e.g. LTV-49821-ISB">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Operational Status</label>
+                        <select class="form-select" id="vehStatus">
+                            <option value="1">Active / In Service</option>
+                            <option value="2">Maintenance / Repair</option>
+                            <option value="3">Decommissioned / Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSaveVehicle">
+                        <i class="bi bi-check-circle me-1"></i> Save Vehicle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD / EDIT ROUTE -->
+<div class="modal fade" id="modalRoute" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="lblModalRouteTitle">
+                    <i class="bi bi-signpost text-primary me-2"></i> Create Transit Route
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formRoute" onsubmit="handleSaveRoute(event)">
+                <input type="hidden" id="routeId">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label required">Route Name / Code</label>
+                        <input type="text" class="form-control" id="rtName" required placeholder="e.g. Route 4: G-10 &rarr; F-8 Campus">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assign Vehicle / Bus</label>
+                        <select class="form-select" id="rtVehicleSelect"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Stops / Coverage Description</label>
+                        <textarea class="form-control" id="rtStops" rows="3" required placeholder="G-10 Markaz, G-9/4, F-8/2, Main Campus Gate..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Monthly Fare Rate (PKR)</label>
+                        <input type="number" class="form-control" id="rtFare" required min="0" step="0.01" value="4500">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSaveRoute">
+                        <i class="bi bi-check-circle me-1"></i> Save Route
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ALLOCATE STUDENT TO ROUTE -->
+<div class="modal fade" id="modalAllocate" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-person-plus-fill text-primary me-2"></i> Allocate Student to Route
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formAllocate" onsubmit="handleAllocateStudent(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label required">Select Student</label>
+                        <select class="form-select" id="allocStudentSelect" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Select Route</label>
+                        <select class="form-select" id="allocRouteSelect" required onchange="updateFareFromRoute()"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Pickup Stop</label>
+                        <input type="text" class="form-control" id="allocPickup" required placeholder="e.g. G-10 Markaz Roundabout">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Drop-off Stop</label>
+                        <input type="text" class="form-control" id="allocDropOff" required placeholder="e.g. School Gate 2">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Monthly Transport Fee (PKR)</label>
+                        <input type="number" class="form-control" id="allocFare" required min="0" step="0.01" value="4500">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-saas-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-saas-primary" id="btnSubmitAllocate">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Allocation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- HIDDEN PRINT CONTAINER (Driver Manifest) -->
+<div id="printManifestContainer" class="d-none"></div>
+
+@section Styles {
+<style>
+    @@media print {
+        body * {
+            visibility: hidden;
+        }
+        #printManifestContainer, #printManifestContainer * {
+            visibility: visible;
+        }
+        #printManifestContainer {
+            display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: #fff;
+            color: #000;
+            padding: 20px;
+        }
+    }
+</style>
+}
+
+@section Scripts {
+<script>
+    let modalVeh = null;
+    let modalRt = null;
+    let modalAlloc = null;
+    let routesCache = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!App.isAuthenticated()) {
+            window.location.href = "/login";
+            return;
+        }
+
+        modalVeh = new bootstrap.Modal(document.getElementById("modalVehicle"));
+        modalRt = new bootstrap.Modal(document.getElementById("modalRoute"));
+        modalAlloc = new bootstrap.Modal(document.getElementById("modalAllocate"));
+
+        loadTransportSummary();
+        loadVehicles();
+        loadRoutes();
+    });
+
+    function refreshActiveTab() {
+        if (document.getElementById("tab-fleet").classList.contains("active")) loadVehicles();
+        else if (document.getElementById("tab-routes").classList.contains("active")) loadRoutes();
+        else if (document.getElementById("tab-allocations").classList.contains("active")) loadAllocations();
+    }
+
+    async function loadTransportSummary() {
+        const res = await apiFetch("/api/transport/summary");
+        if (res.ok && res.data && res.data.success) {
+            const d = res.data.data;
+            document.getElementById("kpiTotalVehicles").textContent = d.totalVehicles || 0;
+            document.getElementById("kpiTotalCapacity").textContent = `Total Capacity: ${d.totalCapacity || 0} Seats`;
+            document.getElementById("kpiActiveRoutes").textContent = d.activeRoutes || 0;
+            document.getElementById("kpiAllocatedStudents").textContent = d.studentsAllocated || 0;
+
+            const rate = d.utilizationRate || 0;
+            document.getElementById("kpiUtilizationRate").textContent = rate + "%";
+            document.getElementById("kpiUtilizationBar").style.width = Math.min(100, rate) + "%";
+        }
+    }
+
+    async function loadVehicles() {
+        const tbody = document.getElementById("vehiclesTableBody");
+        const res = await apiFetch("/api/transport/vehicles");
+        if (res.ok && res.data && res.data.success) {
+            const list = res.data.data || [];
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-secondary">No vehicles found in fleet. Click "Add Vehicle" to register one.</td></tr>`;
+                return;
+            }
+
+            const statusMap = {
+                1: { text: "Active", cls: "bg-success" },
+                2: { text: "Maintenance", cls: "bg-warning text-dark" },
+                3: { text: "Inactive", cls: "bg-secondary" }
+            };
+
+            tbody.innerHTML = list.map(v => {
+                const st = statusMap[v.status] || { text: "Active", cls: "bg-success" };
+                return `
+                    <tr>
+                        <td class="ps-4 fw-bold font-monospace text-primary">${v.vehicleNumber}</td>
+                        <td>${v.model || '-'}</td>
+                        <td><span class="badge bg-light text-dark border">${v.branchName}</span></td>
+                        <td class="fw-semibold">${v.capacity} Seats</td>
+                        <td><span class="badge ${v.assignedStudentsCount >= v.capacity ? 'bg-danger' : 'bg-info'}">${v.assignedStudentsCount} / ${v.capacity}</span></td>
+                        <td><div class="fw-medium">${v.driverName}</div></td>
+                        <td><div class="small font-monospace">${v.driverPhone}</div></td>
+                        <td><span class="badge ${st.cls}">${st.text}</span></td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-saas-outline me-1" onclick="openEditVehicleModal('${v.id}', '${escapeJs(v.vehicleNumber)}', '${escapeJs(v.model)}', ${v.capacity}, '${escapeJs(v.driverName)}', '${escapeJs(v.driverPhone)}', '${escapeJs(v.driverLicenseNumber)}', ${v.status})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-saas-outline text-danger" onclick="deleteVehicle('${v.id}', '${escapeJs(v.vehicleNumber)}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        } else {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">Failed to load fleet.</td></tr>`;
+        }
+    }
+
+    async function loadRoutes() {
+        const tbody = document.getElementById("routesTableBody");
+        const res = await apiFetch("/api/transport/routes");
+        if (res.ok && res.data && res.data.success) {
+            routesCache = res.data.data || [];
+            updateRouteDropdowns();
+
+            if (routesCache.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-secondary">No transit routes configured yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = routesCache.map(r => `
+                <tr>
+                    <td class="ps-4 fw-bold text-body">${r.name}</td>
+                    <td><span class="badge badge-saas-primary font-monospace">${r.vehicleNumber || 'Unassigned'}</span></td>
+                    <td class="small text-secondary">${r.stopsDescription || '-'}</td>
+                    <td class="fw-bold text-success">Rs. ${Number(r.monthlyFare).toLocaleString()}</td>
+                    <td><span class="badge ${r.isActive ? 'bg-success' : 'bg-secondary'}">${r.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-saas-outline me-1" onclick="openEditRouteModal('${r.id}', '${escapeJs(r.name)}', '${r.vehicleId || ''}', '${escapeJs(r.stopsDescription)}', ${r.monthlyFare})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-saas-outline text-danger" onclick="deleteRoute('${r.id}', '${escapeJs(r.name)}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+    }
+
+    function updateRouteDropdowns() {
+        const filterSel = document.getElementById("selRouteFilter");
+        const allocSel = document.getElementById("allocRouteSelect");
+
+        filterSel.innerHTML = `<option value="">All Transit Routes (${routesCache.length})</option>` +
+            routesCache.map(r => `<option value="${r.id}">${r.name} (${r.vehicleNumber || 'Bus'})</option>`).join("");
+
+        allocSel.innerHTML = `<option value="">-- Select Route --</option>` +
+            routesCache.map(r => `<option value="${r.id}" data-fare="${r.monthlyFare}">${r.name} (Fare: Rs. ${r.monthlyFare})</option>`).join("");
+    }
+
+    async function loadAllocations() {
+        const tbody = document.getElementById("allocationsTableBody");
+        const routeId = document.getElementById("selRouteFilter").value;
+
+        let url = "/api/transport/allocations?activeOnly=true&";
+        if (routeId) url += `routeId=${routeId}&`;
+
+        const res = await apiFetch(url);
+        if (res.ok && res.data && res.data.success) {
+            const list = res.data.data || [];
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-secondary">No students allocated for this selection.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(a => `
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-bold">${a.studentName}</div>
+                        <div class="small text-secondary">Roll: ${a.admissionNumber}</div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border">${a.grade || '-'}</span></td>
+                    <td class="fw-semibold">${a.routeName}</td>
+                    <td><span class="badge badge-saas-primary font-monospace">${a.vehicleNumber}</span></td>
+                    <td class="small">${a.pickupPoint}</td>
+                    <td class="small">${a.dropOffPoint}</td>
+                    <td class="fw-bold text-success">Rs. ${Number(a.monthlyFare).toLocaleString()}</td>
+                    <td><span class="badge bg-success">Active</span></td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deallocateStudent('${a.id}', '${escapeJs(a.studentName)}')">
+                            <i class="bi bi-person-dash me-1"></i> Deallocate
+                        </button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+    }
+
+    function openAddVehicleModal() {
+        document.getElementById("formVehicle").reset();
+        document.getElementById("vehId").value = "";
+        document.getElementById("lblModalVehicleTitle").innerHTML = `<i class="bi bi-bus-front text-primary me-2"></i> Register New Vehicle`;
+        modalVeh.show();
+    }
+
+    function openEditVehicleModal(id, num, model, cap, driver, phone, license, st) {
+        document.getElementById("vehId").value = id;
+        document.getElementById("vehNumber").value = num;
+        document.getElementById("vehModel").value = model || "";
+        document.getElementById("vehCapacity").value = cap;
+        document.getElementById("vehDriverName").value = driver;
+        document.getElementById("vehDriverPhone").value = phone;
+        document.getElementById("vehDriverLicense").value = license || "";
+        document.getElementById("vehStatus").value = st;
+        document.getElementById("lblModalVehicleTitle").innerHTML = `<i class="bi bi-pencil text-primary me-2"></i> Edit Vehicle`;
+        modalVeh.show();
+    }
+
+    async function handleSaveVehicle(e) {
+        e.preventDefault();
+        const id = document.getElementById("vehId").value;
+        const body = {
+            vehicleNumber: document.getElementById("vehNumber").value.trim(),
+            model: document.getElementById("vehModel").value.trim() || null,
+            capacity: parseInt(document.getElementById("vehCapacity").value),
+            driverName: document.getElementById("vehDriverName").value.trim(),
+            driverPhone: document.getElementById("vehDriverPhone").value.trim(),
+            driverLicenseNumber: document.getElementById("vehDriverLicense").value.trim() || null,
+            status: parseInt(document.getElementById("vehStatus").value)
+        };
+
+        const method = id ? "PUT" : "POST";
+        const url = id ? `/api/transport/vehicles/${id}` : "/api/transport/vehicles";
+
+        const res = await apiFetch(url, { method: method, body: JSON.stringify(body) });
+        if (res.ok && res.data && res.data.success) {
+            showToast(id ? "Vehicle updated successfully." : "Vehicle registered to fleet.", "success");
+            modalVeh.hide();
+            loadTransportSummary();
+            loadVehicles();
+        } else {
+            showToast("Failed: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    async function deleteVehicle(id, num) {
+        const result = await Swal.fire({
+            title: `Delete Vehicle ${num}?`,
+            text: "This vehicle will be decommissioned and removed from the active fleet.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            confirmButtonText: "Yes, delete"
+        });
+
+        if (result.isConfirmed) {
+            const res = await apiFetch(`/api/transport/vehicles/${id}`, { method: "DELETE" });
+            if (res.ok && res.data && res.data.success) {
+                showToast("Vehicle deleted.", "success");
+                loadTransportSummary();
+                loadVehicles();
+            } else {
+                showToast("Cannot delete: " + (res.data?.message || "Error"), "danger");
+            }
+        }
+    }
+
+    async function openAddRouteModal() {
+        document.getElementById("formRoute").reset();
+        document.getElementById("routeId").value = "";
+        document.getElementById("lblModalRouteTitle").innerHTML = `<i class="bi bi-signpost text-primary me-2"></i> Create Transit Route`;
+        await populateRouteVehicles();
+        modalRt.show();
+    }
+
+    async function openEditRouteModal(id, name, vehId, stops, fare) {
+        document.getElementById("routeId").value = id;
+        document.getElementById("rtName").value = name;
+        document.getElementById("rtStops").value = stops || "";
+        document.getElementById("rtFare").value = fare;
+        await populateRouteVehicles(vehId);
+        document.getElementById("lblModalRouteTitle").innerHTML = `<i class="bi bi-pencil text-primary me-2"></i> Edit Route`;
+        modalRt.show();
+    }
+
+    async function populateRouteVehicles(selectedVehId) {
+        const sel = document.getElementById("rtVehicleSelect");
+        sel.innerHTML = `<option value="">-- No vehicle assigned --</option>`;
+        const res = await apiFetch("/api/transport/vehicles");
+        if (res.ok && res.data && res.data.success) {
+            const vehicles = res.data.data || [];
+            sel.innerHTML += vehicles.map(v => `<option value="${v.id}" ${v.id === selectedVehId ? 'selected' : ''}>${v.vehicleNumber} (${v.model || 'Bus'} - Cap: ${v.capacity})</option>`).join("");
+        }
+    }
+
+    async function handleSaveRoute(e) {
+        e.preventDefault();
+        const id = document.getElementById("routeId").value;
+        const body = {
+            name: document.getElementById("rtName").value.trim(),
+            vehicleId: document.getElementById("rtVehicleSelect").value || null,
+            stopsDescription: document.getElementById("rtStops").value.trim(),
+            monthlyFare: parseFloat(document.getElementById("rtFare").value)
+        };
+
+        const method = id ? "PUT" : "POST";
+        const url = id ? `/api/transport/routes/${id}` : "/api/transport/routes";
+
+        const res = await apiFetch(url, { method: method, body: JSON.stringify(body) });
+        if (res.ok && res.data && res.data.success) {
+            showToast("Route saved successfully.", "success");
+            modalRt.hide();
+            loadTransportSummary();
+            loadRoutes();
+        } else {
+            showToast("Failed: " + (res.data?.message || "Error"), "danger");
+        }
+    }
+
+    async function deleteRoute(id, name) {
+        const result = await Swal.fire({
+            title: `Delete Route "${name}"?`,
+            text: "This route will be permanently removed.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            confirmButtonText: "Yes, delete"
+        });
+
+        if (result.isConfirmed) {
+            const res = await apiFetch(`/api/transport/routes/${id}`, { method: "DELETE" });
+            if (res.ok && res.data && res.data.success) {
+                showToast("Route deleted.", "success");
+                loadTransportSummary();
+                loadRoutes();
+            } else {
+                showToast("Cannot delete: " + (res.data?.message || "Error"), "danger");
+            }
+        }
+    }
+
+    async function openAllocateStudentModal() {
+        document.getElementById("formAllocate").reset();
+
+        const selStu = document.getElementById("allocStudentSelect");
+        selStu.innerHTML = `<option value="">Loading students...</option>`;
+        const resStu = await apiFetch("/api/students?pageSize=100");
+        if (resStu.ok && resStu.data && resStu.data.success) {
+            const students = resStu.data.data.items || [];
+            selStu.innerHTML = `<option value="">-- Select Student --</option>` +
+                students.map(s => `<option value="${s.id}">${s.fullName} (${s.admissionNumber} - ${s.currentGrade})</option>`).join("");
+        }
+
+        updateRouteDropdowns();
+        modalAlloc.show();
+    }
+
+    function updateFareFromRoute() {
+        const sel = document.getElementById("allocRouteSelect");
+        const opt = sel.options[sel.selectedIndex];
+        if (opt && opt.dataset.fare) {
+            document.getElementById("allocFare").value = opt.dataset.fare;
+        }
+    }
+
+    async function handleAllocateStudent(e) {
+        e.preventDefault();
+        const body = {
+            studentId: document.getElementById("allocStudentSelect").value,
+            routeId: document.getElementById("allocRouteSelect").value,
+            pickupPoint: document.getElementById("allocPickup").value.trim(),
+            dropOffPoint: document.getElementById("allocDropOff").value.trim(),
+            monthlyFare: parseFloat(document.getElementById("allocFare").value)
+        };
+
+        const res = await apiFetch("/api/transport/allocate", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        if (res.ok && res.data && res.data.success) {
+            showToast("Student allocated to route successfully!", "success");
+            modalAlloc.hide();
+            loadTransportSummary();
+            loadAllocations();
+        } else {
+            showToast("Allocation failed: " + (res.data?.message || "Capacity full or error"), "danger");
+        }
+    }
+
+    async function deallocateStudent(id, name) {
+        const result = await Swal.fire({
+            title: `Deallocate ${name}?`,
+            text: "Remove this student from the active bus roster?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            confirmButtonText: "Yes, deallocate"
+        });
+
+        if (result.isConfirmed) {
+            const res = await apiFetch(`/api/transport/deallocate/${id}`, { method: "POST" });
+            if (res.ok && res.data && res.data.success) {
+                showToast("Student deallocated from route.", "success");
+                loadTransportSummary();
+                loadAllocations();
+            } else {
+                showToast("Failed: " + (res.data?.message || "Error"), "danger");
+            }
+        }
+    }
+
+    async function printDriverManifest() {
+        const routeId = document.getElementById("selRouteFilter").value;
+        const res = await apiFetch(`/api/transport/allocations?activeOnly=true&${routeId ? 'routeId=' + routeId : ''}`);
+        if (!res.ok || !res.data || !res.data.success) {
+            showToast("Failed to fetch passenger list.", "danger");
+            return;
+        }
+
+        const items = res.data.data || [];
+        const container = document.getElementById("printManifestContainer");
+
+        container.innerHTML = `
+            <div class="border-bottom pb-2 mb-3">
+                <h3 class="fw-bold mb-0">SCHOOL BUS PASSENGER &amp; TRIP MANIFEST</h3>
+                <div class="small">Main Campus Transport Logistics &bull; Official Daily Driver Route Roster</div>
+                <div class="small mt-1">Generated: <strong>${new Date().toLocaleString()}</strong></div>
+            </div>
+
+            <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Roll / Adm</th>
+                        <th>Class</th>
+                        <th>Route</th>
+                        <th>Bus #</th>
+                        <th>Pickup Point</th>
+                        <th>Drop-off Point</th>
+                        <th>Attendance Check</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${items.map((a, i) => `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td class="fw-bold">${a.studentName}</td>
+                            <td>${a.admissionNumber}</td>
+                            <td>${a.grade || '-'}</td>
+                            <td>${a.routeName}</td>
+                            <td>${a.vehicleNumber}</td>
+                            <td>${a.pickupPoint}</td>
+                            <td>${a.dropOffPoint}</td>
+                            <td style="width: 100px;">[ &nbsp; ] Present</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-between mt-4 pt-3 border-top small">
+                <div>Driver Signature: _________________________</div>
+                <div>Transport Incharge Signature: _________________________</div>
+            </div>
+        `;
+
+        window.print();
+    }
+
+    function escapeJs(str) {
+        return (str || '').replace(/'/g, "\\'");
+    }
+</script>
+}

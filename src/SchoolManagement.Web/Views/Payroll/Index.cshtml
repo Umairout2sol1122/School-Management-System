@@ -1,0 +1,765 @@
+@{
+    ViewData["Title"] = "Staff Payroll & Compensation";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-wallet2 text-primary me-2"></i>Staff Payroll &amp; Compensation</h2>
+            <p class="text-muted mb-0">Monthly batch salary runs, statutory FBR tax brackets, EOBI contributions &amp; printable salary vouchers</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="openTaxCalculatorModal()">
+                <i class="bi bi-calculator me-1"></i>Tax Estimator
+            </button>
+            <button class="btn btn-primary" onclick="openGeneratePayrollModal()">
+                <i class="bi bi-play-circle-fill me-1"></i>Process Monthly Payroll
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-primary-subtle text-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">Total Net Disbursed</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statNetSalary">PKR 0</h3>
+                    </div>
+                    <div class="fs-1 text-primary opacity-75"><i class="bi bi-cash-stack"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-danger-subtle text-danger">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">FBR Income Tax Withheld</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statTaxWithheld">PKR 0</h3>
+                    </div>
+                    <div class="fs-1 text-danger opacity-75"><i class="bi bi-bank2"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-info-subtle text-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">EOBI Contributions</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statEobi">PKR 0</h3>
+                    </div>
+                    <div class="fs-1 text-info opacity-75"><i class="bi bi-shield-check"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-3 bg-success-subtle text-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase fw-semibold fs-7 tracking-wider">Total Payroll Runs</div>
+                        <h3 class="fw-bold mt-1 mb-0" id="statTotalRuns">0</h3>
+                    </div>
+                    <div class="fs-1 text-success opacity-75"><i class="bi bi-calendar-check-fill"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card & Payroll Runs Table -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-bottom p-3">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" id="payrollSearch" class="form-control bg-light border-start-0" placeholder="Search payroll runs by title or month..." oninput="filterPayrollRuns()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="payrollYearFilter" class="form-select bg-light" onchange="loadPayrollRuns()">
+                        <option value="">All Years</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="payrollStatusFilter" class="form-select bg-light" onchange="filterPayrollRuns()">
+                        <option value="">All Statuses</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Disbursed">Disbursed</option>
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button class="btn btn-outline-secondary w-100" onclick="loadPayrollRuns()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="payrollRunsTable">
+                    <thead class="table-light text-muted text-uppercase fs-7">
+                        <tr>
+                            <th class="ps-3">Period / Title</th>
+                            <th>Staff Count</th>
+                            <th>Gross Total</th>
+                            <th>Tax Deducted</th>
+                            <th>EOBI Total</th>
+                            <th>Absence Deductions</th>
+                            <th>Net Payable</th>
+                            <th>Status</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payrollRunsList">
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                Loading payroll runs...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Generate Monthly Payroll -->
+<div class="modal fade" id="generatePayrollModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-play-circle-fill text-primary me-2"></i>Process Monthly Payroll</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="generatePayrollForm" onsubmit="handleGeneratePayroll(event)">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Month <span class="text-danger">*</span></label>
+                            <select id="genMonth" class="form-select" required>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10" selected>October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Year <span class="text-danger">*</span></label>
+                            <select id="genYear" class="form-select" required>
+                                <option value="2026" selected>2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2027">2027</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Payroll Title (Optional)</label>
+                            <input type="text" id="genTitle" class="form-control" placeholder="e.g. October 2026 Faculty &amp; Staff Compensation">
+                        </div>
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded-3 small text-muted">
+                                <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                                <strong>Automated Calculations Included:</strong>
+                                <ul class="mb-0 mt-1 ps-3">
+                                    <li>Basic salary + House rent (45%) + Medical (10%) + Conveyance</li>
+                                    <li>FBR progressive income tax brackets calculated and divided by 12</li>
+                                    <li>EOBI standard contributions (Employee PKR 370 / Employer PKR 1,850)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-top text-end">
+                        <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitGeneratePayroll">
+                            <i class="bi bi-lightning-charge-fill me-1"></i>Process Payroll Batch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Pay Slips List for Run -->
+<div class="modal fade" id="slipsListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-3">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="slipsModalTitle">Payroll Run Details</h5>
+                    <small class="text-muted" id="slipsModalSubtitle">Staff Pay Slips Breakdown</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-muted text-uppercase fs-7">
+                            <tr>
+                                <th class="ps-3">Slip No</th>
+                                <th>Staff Member</th>
+                                <th>Designation / Dept</th>
+                                <th>Gross Salary</th>
+                                <th>FBR Tax</th>
+                                <th>EOBI (Emp)</th>
+                                <th>Absence</th>
+                                <th>Net Payable</th>
+                                <th>Status</th>
+                                <th class="text-end pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paySlipsTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top p-3 d-flex justify-content-between">
+                <span class="text-muted small" id="slipsCountSummary">Showing 0 pay slips</span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Printable Pay Slip Voucher -->
+<div class="modal fade" id="paySlipVoucherModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom p-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-text text-primary me-2"></i>Official Salary Voucher</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-primary" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i>Print Voucher
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4 bg-light overflow-auto">
+                <div id="printableSalaryVoucher" class="bg-white p-4 mx-auto shadow-sm rounded-2" style="max-width: 720px; font-family: 'Segoe UI', Tahoma, sans-serif; border: 2px solid #0d6efd;">
+                    <!-- Voucher Header -->
+                    <div class="text-center pb-3 border-bottom mb-3">
+                        <h3 class="fw-bold text-primary mb-0 text-uppercase" id="psSchoolName">School Management System</h3>
+                        <p class="text-muted small mb-1" id="psBranchName">Campus | Islamic Republic of Pakistan</p>
+                        <span class="badge bg-primary px-3 py-1 text-uppercase tracking-wider">Salary Voucher / Pay Slip</span>
+                    </div>
+
+                    <!-- Meta Grid -->
+                    <div class="row g-2 mb-3 small bg-light p-3 rounded">
+                        <div class="col-6"><strong>Pay Slip No:</strong> <code class="text-dark fw-bold" id="psSlipNumber">PS-001</code></div>
+                        <div class="col-6"><strong>Period:</strong> <span id="psPeriod" class="fw-bold">October 2026</span></div>
+                        <div class="col-6"><strong>Employee Code:</strong> <span id="psEmpCode">EMP-01</span></div>
+                        <div class="col-6"><strong>Employee Name:</strong> <span class="fw-bold" id="psStaffName">Staff Member</span></div>
+                        <div class="col-6"><strong>Designation:</strong> <span id="psDesignation">Senior Teacher</span></div>
+                        <div class="col-6"><strong>Department:</strong> <span id="psDepartment">Academics</span></div>
+                        <div class="col-6"><strong>CNIC / National ID:</strong> <span id="psNationalId">--</span></div>
+                        <div class="col-6"><strong>Bank Account:</strong> <span id="psBankAccount">--</span></div>
+                    </div>
+
+                    <!-- Earnings & Deductions 2-Column Table -->
+                    <div class="row g-3 mb-3">
+                        <!-- Earnings -->
+                        <div class="col-6">
+                            <div class="card border-0 bg-success-subtle h-100">
+                                <div class="card-header bg-success text-white fw-bold py-1 px-3 fs-7">EARNINGS (PKR)</div>
+                                <div class="card-body p-2 fs-7">
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>Basic Salary:</span><strong id="psBasic">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>House Rent (45%):</span><strong id="psHouseRent">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>Medical (10%):</span><strong id="psMedical">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>Conveyance:</span><strong id="psConveyance">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>Special / Adhoc:</span><strong id="psSpecial">0</strong></div>
+                                    <div class="d-flex justify-content-between pt-2 fw-bold text-success fs-6"><span>Gross Earnings:</span><span id="psGross">0</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deductions -->
+                        <div class="col-6">
+                            <div class="card border-0 bg-danger-subtle h-100">
+                                <div class="card-header bg-danger text-white fw-bold py-1 px-3 fs-7">DEDUCTIONS (PKR)</div>
+                                <div class="card-body p-2 fs-7">
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>FBR Income Tax:</span><strong id="psTax">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>EOBI Contribution:</span><strong id="psEobi">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>Absence Deductions:</span><strong id="psAbsence">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>Advance Recovery:</span><strong id="psAdvance">0</strong></div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom"><span>Other Deductions:</span><strong id="psOther">0</strong></div>
+                                    <div class="d-flex justify-content-between pt-2 fw-bold text-danger fs-6"><span>Total Deductions:</span><span id="psTotalDeductions">0</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Net Pay Highlight -->
+                    <div class="p-3 bg-primary text-white rounded text-center mb-4">
+                        <div class="text-uppercase small fw-semibold tracking-wider">Net Salary Payable / Transferred</div>
+                        <h2 class="fw-bold my-1" id="psNetPay">PKR 0</h2>
+                        <div class="small opacity-75" id="psPaymentMode">Payment Mode: Direct Bank Credit</div>
+                    </div>
+
+                    <!-- Signatures -->
+                    <div class="d-flex justify-content-between text-center pt-4 mt-4 border-top">
+                        <div style="width: 180px;">
+                            <div style="border-bottom: 1px solid #718096; height: 35px;"></div>
+                            <span class="small text-muted">Accounts Officer / Prepared By</span>
+                        </div>
+                        <div style="width: 180px;">
+                            <div style="border-bottom: 1px solid #718096; height: 35px;"></div>
+                            <span class="small text-muted">Principal / Approved By</span>
+                        </div>
+                        <div style="width: 180px;">
+                            <div style="border-bottom: 1px solid #718096; height: 35px;"></div>
+                            <span class="small text-muted">Employee Signature</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Tax Calculator -->
+<div class="modal fade" id="taxCalcModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-calculator text-primary me-2"></i>FBR Income Tax Estimator</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Monthly Gross Salary (PKR)</label>
+                    <input type="number" id="calcGrossMonthly" class="form-control form-control-lg" placeholder="e.g. 120000" oninput="calculateTaxLive()">
+                </div>
+                <div id="taxCalcResults" class="p-3 bg-light rounded-3">
+                    <div class="d-flex justify-content-between mb-2"><span>Annual Taxable Income:</span><strong id="tcAnnual">PKR 0</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Applicable Tax Bracket:</span><span id="tcSlab" class="badge bg-secondary">--</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Total Annual Tax:</span><strong id="tcAnnualTax" class="text-danger">PKR 0</strong></div>
+                    <div class="d-flex justify-content-between pt-2 border-top fs-5 fw-bold"><span>Monthly Tax Deduction:</span><span id="tcMonthlyTax" class="text-danger">PKR 0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@@media print {
+    body * { visibility: hidden !important; }
+    #printableSalaryVoucher, #printableSalaryVoucher * { visibility: visible !important; }
+    #printableSalaryVoucher {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+
+@section Scripts {
+<script>
+    let payrollRunsData = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPayrollRuns();
+    });
+
+    async function loadPayrollRuns() {
+        try {
+            const token = localStorage.getItem('token');
+            const year = document.getElementById('payrollYearFilter').value;
+            let url = '/api/payroll/runs';
+            if (year) url += `?year=${year}`;
+
+            const res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if (data.success && Array.isArray(data.data)) {
+                payrollRunsData = data.data;
+                renderPayrollRuns(payrollRunsData);
+                updatePayrollKPIs(payrollRunsData);
+            } else {
+                document.getElementById('payrollRunsList').innerHTML = `
+                    <tr><td colspan="9" class="text-center py-4 text-muted">No payroll runs found.</td></tr>`;
+            }
+        } catch (err) {
+            console.error('Failed to load payroll runs:', err);
+            document.getElementById('payrollRunsList').innerHTML = `
+                <tr><td colspan="9" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error loading payroll runs.</td></tr>`;
+        }
+    }
+
+    function renderPayrollRuns(runs) {
+        const tbody = document.getElementById('payrollRunsList');
+        if (!runs || runs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted">No payroll runs processed yet. Click 'Process Monthly Payroll' to generate one.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = runs.map(r => {
+            let statusBadge = '';
+            if (r.statusName === 'Draft') {
+                statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="bi bi-hourglass-split me-1"></i>Draft</span>';
+            } else if (r.statusName === 'Approved') {
+                statusBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-check-circle me-1"></i>Approved</span>';
+            } else if (r.statusName === 'Disbursed') {
+                statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check2-all me-1"></i>Disbursed</span>';
+            }
+
+            return `
+                <tr>
+                    <td class="ps-3">
+                        <div class="fw-bold">${escapeHtml(r.title)}</div>
+                        <div class="small text-muted">${getMonthName(r.month)} ${r.year} ${r.branchName ? `(${escapeHtml(r.branchName)})` : ''}</div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-people me-1"></i>${r.totalStaffCount} Staff</span></td>
+                    <td class="fw-semibold">PKR ${r.totalGrossSalary.toLocaleString()}</td>
+                    <td class="text-danger">PKR ${r.totalTaxDeduction.toLocaleString()}</td>
+                    <td class="text-info">PKR ${r.totalEobiDeduction.toLocaleString()}</td>
+                    <td class="text-muted">PKR ${r.totalAbsenceDeduction.toLocaleString()}</td>
+                    <td class="fw-bold text-success fs-6">PKR ${r.totalNetSalary.toLocaleString()}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-end pe-3">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" title="View Pay Slips" onclick="openSlipsModal('${r.id}', '${escapeHtml(r.title)}')">
+                                <i class="bi bi-list-check me-1"></i>Slips
+                            </button>
+                            ${r.statusName === 'Draft' ? `
+                                <button class="btn btn-outline-success" title="Approve Payroll" onclick="approvePayrollRun('${r.id}')">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            ` : ''}
+                            ${r.statusName === 'Approved' ? `
+                                <button class="btn btn-success" title="Disburse Payroll" onclick="disbursePayrollRun('${r.id}')">
+                                    <i class="bi bi-send-check"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updatePayrollKPIs(runs) {
+        let totalNet = 0;
+        let totalTax = 0;
+        let totalEobi = 0;
+
+        runs.forEach(r => {
+            totalNet += r.totalNetSalary || 0;
+            totalTax += r.totalTaxDeduction || 0;
+            totalEobi += r.totalEobiDeduction || 0;
+        });
+
+        document.getElementById('statNetSalary').innerText = `PKR ${totalNet.toLocaleString()}`;
+        document.getElementById('statTaxWithheld').innerText = `PKR ${totalTax.toLocaleString()}`;
+        document.getElementById('statEobi').innerText = `PKR ${totalEobi.toLocaleString()}`;
+        document.getElementById('statTotalRuns').innerText = runs.length;
+    }
+
+    function filterPayrollRuns() {
+        const query = document.getElementById('payrollSearch').value.toLowerCase();
+        const status = document.getElementById('payrollStatusFilter').value;
+
+        const filtered = payrollRunsData.filter(r => {
+            const matchesQuery = !query || r.title.toLowerCase().includes(query) || getMonthName(r.month).toLowerCase().includes(query);
+            const matchesStatus = !status || r.statusName === status;
+            return matchesQuery && matchesStatus;
+        });
+
+        renderPayrollRuns(filtered);
+    }
+
+    function openGeneratePayrollModal() {
+        new bootstrap.Modal(document.getElementById('generatePayrollModal')).show();
+    }
+
+    async function handleGeneratePayroll(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmitGeneratePayroll');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+
+        try {
+            const month = parseInt(document.getElementById('genMonth').value, 10);
+            const year = parseInt(document.getElementById('genYear').value, 10);
+            const title = document.getElementById('genTitle').value.trim();
+
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/payroll/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    month: month,
+                    year: year,
+                    title: title || null
+                })
+            });
+
+            const data = await res.json();
+            if (res.status === 201 && data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('generatePayrollModal')).hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Payroll Generated!',
+                    text: `Processed ${data.data.totalStaffCount} staff pay slips (Net: PKR ${data.data.totalNetSalary.toLocaleString()})`
+                });
+                loadPayrollRuns();
+            } else {
+                Swal.fire('Error', data.message || 'Failed to process payroll batch.', 'error');
+            }
+        } catch (err) {
+            console.error('Payroll generation failed:', err);
+            Swal.fire('Error', 'Unable to generate payroll batch.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-lightning-charge-fill me-1"></i>Process Payroll Batch';
+        }
+    }
+
+    async function openSlipsModal(runId, runTitle) {
+        document.getElementById('slipsModalTitle').innerText = runTitle;
+        const tbody = document.getElementById('paySlipsTableBody');
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary me-2"></span>Loading slips...</td></tr>`;
+        new bootstrap.Modal(document.getElementById('slipsListModal')).show();
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/payroll/runs/${runId}/slips`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if (data.success && Array.isArray(data.data)) {
+                const slips = data.data;
+                document.getElementById('slipsCountSummary').innerText = `Total: ${slips.length} pay slips generated`;
+
+                tbody.innerHTML = slips.map(s => `
+                    <tr>
+                        <td class="ps-3"><code>${escapeHtml(s.slipNumber)}</code></td>
+                        <td>
+                            <div class="fw-bold">${escapeHtml(s.staffName)}</div>
+                            <small class="text-muted">${escapeHtml(s.employeeCode)}</small>
+                        </td>
+                        <td>${escapeHtml(s.designation)} <span class="text-muted">(${escapeHtml(s.department)})</span></td>
+                        <td>PKR ${s.grossSalary.toLocaleString()}</td>
+                        <td class="text-danger">PKR ${s.taxDeduction.toLocaleString()}</td>
+                        <td class="text-info">PKR ${s.eobiEmployeeContribution.toLocaleString()}</td>
+                        <td class="text-muted">${s.absenceDays > 0 ? `${s.absenceDays}d (PKR ${s.absenceDeduction.toLocaleString()})` : '-'}</td>
+                        <td class="fw-bold text-success fs-6">PKR ${s.netSalary.toLocaleString()}</td>
+                        <td><span class="badge ${s.statusName === 'Paid' ? 'bg-success' : 'bg-secondary'}">${s.statusName}</span></td>
+                        <td class="text-end pe-3">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openVoucherModal('${s.id}')">
+                                <i class="bi bi-receipt me-1"></i>Voucher
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-muted">No slips found in this run.</td></tr>`;
+            }
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-danger">Error loading slips.</td></tr>`;
+        }
+    }
+
+    async function openVoucherModal(slipId) {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/payroll/slips/${slipId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if (data.success && data.data) {
+                const s = data.data;
+                document.getElementById('psSchoolName').innerText = s.organizationName;
+                document.getElementById('psBranchName').innerText = s.branchName ? `${s.branchName} | Pakistan` : 'Quality Education';
+                document.getElementById('psSlipNumber').innerText = s.slipNumber;
+                document.getElementById('psPeriod').innerText = `${getMonthName(s.month)} ${s.year}`;
+                document.getElementById('psEmpCode').innerText = s.employeeCode;
+                document.getElementById('psStaffName').innerText = s.staffName;
+                document.getElementById('psDesignation').innerText = s.designation;
+                document.getElementById('psDepartment').innerText = s.department;
+                document.getElementById('psNationalId').innerText = s.nationalId || 'On Record';
+                document.getElementById('psBankAccount').innerText = s.bankAccountNumber ? `${s.bankName || 'Bank'}: ${s.bankAccountNumber}` : 'Direct Transfer / Cash';
+
+                // Earnings
+                document.getElementById('psBasic').innerText = `PKR ${s.basicSalary.toLocaleString()}`;
+                document.getElementById('psHouseRent').innerText = `PKR ${s.houseRentAllowance.toLocaleString()}`;
+                document.getElementById('psMedical').innerText = `PKR ${s.medicalAllowance.toLocaleString()}`;
+                document.getElementById('psConveyance').innerText = `PKR ${s.conveyanceAllowance.toLocaleString()}`;
+                document.getElementById('psSpecial').innerText = `PKR ${s.specialAllowance.toLocaleString()}`;
+                document.getElementById('psGross').innerText = `PKR ${s.grossSalary.toLocaleString()}`;
+
+                // Deductions
+                document.getElementById('psTax').innerText = `PKR ${s.taxDeduction.toLocaleString()}`;
+                document.getElementById('psEobi').innerText = `PKR ${s.eobiEmployeeContribution.toLocaleString()}`;
+                document.getElementById('psAbsence').innerText = `PKR ${s.absenceDeduction.toLocaleString()}`;
+                document.getElementById('psAdvance').innerText = `PKR ${s.advanceRecovery.toLocaleString()}`;
+                document.getElementById('psOther').innerText = `PKR ${s.otherDeductions.toLocaleString()}`;
+                document.getElementById('psTotalDeductions').innerText = `PKR ${s.totalDeductions.toLocaleString()}`;
+
+                // Net
+                document.getElementById('psNetPay').innerText = `PKR ${s.netSalary.toLocaleString()}`;
+                document.getElementById('psPaymentMode').innerText = `Payment Mode: ${s.paymentMode === 1 ? 'Bank Transfer' : s.paymentMode === 2 ? 'Cheque' : 'Cash'} | Status: ${s.statusName}`;
+
+                new bootstrap.Modal(document.getElementById('paySlipVoucherModal')).show();
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Unable to load salary voucher.', 'error');
+        }
+    }
+
+    async function approvePayrollRun(runId) {
+        const result = await Swal.fire({
+            title: 'Approve Payroll Run?',
+            text: 'This locks the payroll calculation and prepares it for disbursement.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Approve'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`/api/payroll/runs/${runId}/approve`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('Approved!', 'Payroll run has been approved.', 'success');
+                    loadPayrollRuns();
+                } else {
+                    Swal.fire('Error', data.message || 'Approval failed', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Failed to approve payroll.', 'error');
+            }
+        }
+    }
+
+    async function disbursePayrollRun(runId) {
+        const { value: formValues } = await Swal.fire({
+            title: 'Disburse Payroll',
+            html: `
+                <div class="text-start">
+                    <label class="form-label small fw-semibold">Payment Mode</label>
+                    <select id="swalPayMode" class="form-select form-select-sm mb-2">
+                        <option value="1">Direct Bank Transfer</option>
+                        <option value="2">Corporate Cheque</option>
+                        <option value="3">Cash Voucher</option>
+                    </select>
+                    <label class="form-label small fw-semibold">Bank Reference / Cheque #</label>
+                    <input id="swalRef" class="form-control form-control-sm mb-2" placeholder="e.g. FT-202610-0982">
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Confirm Disbursement',
+            preConfirm: () => {
+                return {
+                    paymentMode: parseInt(document.getElementById('swalPayMode').value, 10),
+                    paymentReference: document.getElementById('swalRef').value
+                };
+            }
+        });
+
+        if (formValues) {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`/api/payroll/runs/${runId}/disburse`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formValues)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('Disbursed!', 'All pay slips marked as paid.', 'success');
+                    loadPayrollRuns();
+                } else {
+                    Swal.fire('Error', data.message || 'Disbursement failed', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Failed to disburse payroll.', 'error');
+            }
+        }
+    }
+
+    function openTaxCalculatorModal() {
+        document.getElementById('calcGrossMonthly').value = '';
+        calculateTaxLive();
+        new bootstrap.Modal(document.getElementById('taxCalcModal')).show();
+    }
+
+    function calculateTaxLive() {
+        const gross = parseFloat(document.getElementById('calcGrossMonthly').value) || 0;
+        const annual = gross * 12;
+
+        let annualTax = 0;
+        let slab = 'Exempt (Up to PKR 600,000 / year)';
+
+        if (annual <= 600000) {
+            annualTax = 0;
+            slab = 'Exempt (0%)';
+        } else if (annual <= 1200000) {
+            annualTax = (annual - 600000) * 0.05;
+            slab = '5% above 600K';
+        } else if (annual <= 2200000) {
+            annualTax = 30000 + (annual - 1200000) * 0.15;
+            slab = '30K + 15% above 1.2M';
+        } else if (annual <= 3200000) {
+            annualTax = 180000 + (annual - 2200000) * 0.25;
+            slab = '180K + 25% above 2.2M';
+        } else if (annual <= 4100000) {
+            annualTax = 430000 + (annual - 3200000) * 0.30;
+            slab = '430K + 30% above 3.2M';
+        } else {
+            annualTax = 700000 + (annual - 4100000) * 0.35;
+            slab = '700K + 35% above 4.1M';
+        }
+
+        const monthlyTax = Math.round(annualTax / 12);
+
+        document.getElementById('tcAnnual').innerText = `PKR ${annual.toLocaleString()}`;
+        document.getElementById('tcSlab').innerText = slab;
+        document.getElementById('tcAnnualTax').innerText = `PKR ${Math.round(annualTax).toLocaleString()}`;
+        document.getElementById('tcMonthlyTax').innerText = `PKR ${monthlyTax.toLocaleString()}`;
+    }
+
+    function getMonthName(m) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return months[m - 1] || `Month ${m}`;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.toString().replace(/[&<>"']/g, m => map[m]);
+    }
+</script>
+}
